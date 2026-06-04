@@ -7,7 +7,7 @@ tags: [introduction, ml-systems, gpu-optimization, career]
 
 ## Starting Point
 
-Welcome to my corner of the internet! I'm Brayden, a rising junior at Vanderbilt University studying Mathematics and Computer Science. This blog marks the beginning of publicly documenting my journey toward becoming an ML systems engineer.
+Welcome to my site! I'm Brayden, a rising junior at Vanderbilt University studying Mathematics and Computer Science. This blog marks the beginning of publicly documenting my journey toward becoming an ML systems engineer.
 
 ## Why ML Systems?
 
@@ -49,14 +49,14 @@ I'm currently focused on building a strong foundation in:
 
 ## The Road Ahead
 
-The path from student to ML systems engineer isn't always clear, but I'm committed to the journey. By sharing my progress publicly, I hope to:
+The path isn't always clear, but I'm committed to the journey. By sharing my progress publicly, I hope to:
 
 - Build accountability for my learning goals
 - Connect with others on similar paths
 - Demonstrate my growth to potential employers
 - Contribute to the broader developer community
 
-If you're interested in ML systems, GPU optimization, or just following along on this journey, I'd love to connect. Feel free to reach out via [GitHub](https://github.com/brayd-1573) or [email](mailto:brayden.r.cox@vanderbilt.edu).
+If you're interested in ML systems, GPU optimization, or just following along on this journey, I'd love to connect. Feel free to reach out via [GitHub](https://github.com/brayd-1573) or [email](mailto:brayden.cox2005@icloud.com).
 
 Here's to the journey ahead!
 

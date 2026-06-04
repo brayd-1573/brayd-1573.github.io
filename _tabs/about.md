@@ -10,9 +10,7 @@ I'm a rising junior at Vanderbilt University studying Mathematics and Computer S
 
 ### My Journey
 
-My goal is to become an ML systems engineer or GPU optimization engineer at a company like NVIDIA or one of the FAANG companies. I'm fascinated by the low-level systems work that makes modern AI possible—from kernel optimization and memory management to distributed training infrastructure.
-
-This blog serves as a living document of my journey from student to systems engineer, chronicling:
+My goal is to work in ML systems, GPU optimization, AI infastructure at a company like NVIDIA or one of the FAANG companies. This blog serves as a living document of my journey from student to systems engineer, chronicling:
 
 - **Technical deep dives** into GPU programming, CUDA, and parallel computing
 - **ML systems projects** exploring model optimization and inference acceleration
@@ -22,7 +20,7 @@ This blog serves as a living document of my journey from student to systems engi
 
 ### Current Focus
 
-Right now, I'm diving deep into:
+Right now, I'm looking into:
 - GPU architecture and CUDA programming
 - High-performance computing and parallel algorithms
 - Machine learning infrastructure and model optimization
@@ -35,12 +33,12 @@ I believe in learning in public. By documenting my journey, I hope to:
 1. Solidify my own understanding through teaching
 2. Build an online presence in the ML systems space
 3. Connect with like-minded engineers and researchers
-4. Demonstrate my growth and capabilities to potential employers
+4. Demonstrate my growth and capabilities
 
 ### Get in Touch
 
-I'm always interested in connecting with others passionate about ML systems, GPU optimization, and high-performance computing. Feel free to reach out!
+I'm always interested in connecting with others. Feel free to reach out!
 
 - GitHub: [brayd-1573](https://github.com/brayd-1573)
-- Email: brayden.r.cox@vanderbilt.edu
-- LinkedIn: [braydencox](https://linkedin.com/in/braydencox)
+- Email: brayden.cox2005@icloud.com
+- LinkedIn: [braydencox](https://www.linkedin.com/in/braydencox1573)
