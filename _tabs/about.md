@@ -4,7 +4,7 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-## Hi, I'm Brayden
+## Who I Am
 
 I'm a rising junior at Vanderbilt University studying Mathematics and Computer Science with a passion for the intersection of machine learning and high-performance computing.
 

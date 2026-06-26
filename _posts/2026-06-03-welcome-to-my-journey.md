@@ -13,7 +13,7 @@ Welcome to my site! I'm Brayden, a rising junior at Vanderbilt University studyi
 
 The intersection of machine learning and systems engineering fascinates me. While many are captivated by what models can do, I'm equally intrigued by *how* they do it. The engineering challenges of making neural networks run efficiently—whether that's through GPU optimization, distributed training, or inference acceleration—represent some of the most exciting problems in computer science today.
 
-Companies like NVIDIA, Meta, Google, and others are pushing the boundaries of what's possible with hardware acceleration and systems optimization. I want to be part of that story.
+Companies like NVIDIA, Meta, Google, and others are pushing the boundaries of what's possible with hardware acceleration and systems optimization.
 
 ## What to Expect
 
@@ -57,8 +57,6 @@ The path isn't always clear, but I'm committed to the journey. By sharing my pro
 - Contribute to the broader developer community
 
 If you're interested in ML systems, GPU optimization, or just following along on this journey, I'd love to connect. Feel free to reach out via [GitHub](https://github.com/brayd-1573) or [email](mailto:brayden.cox2005@icloud.com).
-
-Here's to the journey ahead!
 
 ---
 
