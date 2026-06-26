@@ -1,6 +1,6 @@
 ---
 title: "My Roadmap to ML Systems Engineering: Summer 2026 Through Fall Semester"
-date: 2026-06-26 14:00:00 -0500
+date: 2026-06-26 09:00:00 -0500
 categories: [Learning, ML Systems]
 tags: [roadmap, deep-learning, ml-compilers, vanderbilt, career-pivot]
 ---
