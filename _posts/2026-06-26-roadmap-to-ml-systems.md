@@ -185,7 +185,19 @@ By December, the goal is to move past just using frameworks and really understan
 
 One major goal for me this time is to avoid burning out—I’ve stretched myself too thin in the past, and I want to make sure I actually understand what I’m studying instead of just getting through it.
 
-## Learning from the Market: Job Descriptions as a Roadmap
+## What Success Looks Like
+
+By the end of Fall 2026, I want to:
+
+- **Have built** a complete deep learning framework (Needle)
+- **Understand** how modern ML compilers optimize code for different hardware targets
+- **Complete** a research project on LLM inference/serving with tangible results
+- **Contribute** to an open-source ML systems project (TVM, PyTorch, vLLM, etc.)
+- **Publish** technical blog posts documenting key insights from each phase
+- **Be ready** for summer 2027 ML systems internships at companies pushing the frontier
+
+
+## Learning from the Market
 
 One habit I’ve developed is reading through job descriptions for roles I’m targeting. Here are a few positions I’ve saved:
 
@@ -239,16 +251,6 @@ What do all these roles have in common?
 4. **Performance obsession** - Profiling, bottleneck analysis, hardware-software co-design
 5. **Transformer/LLM expertise** - The market is all about generative AI now
 
-## What Success Looks Like
-
-By the end of Fall 2026, I want to:
-
-- **Have built** a complete deep learning framework (Needle)
-- **Understand** how modern ML compilers optimize code for different hardware targets
-- **Complete** a research project on LLM inference/serving with tangible results
-- **Contribute** to an open-source ML systems project (TVM, PyTorch, vLLM, etc.)
-- **Publish** technical blog posts documenting key insights from each phase
-- **Be ready** for summer 2027 ML systems internships at companies pushing the frontier
 
 ## Accountability
 
