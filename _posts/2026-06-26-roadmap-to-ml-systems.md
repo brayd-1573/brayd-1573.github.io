@@ -128,9 +128,11 @@ I'll work through this material throughout the fall, culminating in a research p
 - Multi-GPU serving
 - Quantization and compression
 
-The combination of Systems for AI lectures + CMU 642 materials + research with Gokhale should give me a comprehensive foundation in modern ML systems.
-
 **Course level:** CMU 15-442 is the undergraduate version, 15-642 is graduate level. Both cover similar content but 642 has more rigorous expectations. Since I'm doing this as an independent study rather than for official CMU credit, I'm treating it as the graduate version—working through the harder problem sets and aiming for that level of depth. The course is designed for students who want to pursue ML systems research or engineering roles, so it assumes you already have ML fundamentals down and focuses on the systems side.
+
+In addition to the CMU course materials, I'll be using [**MLSysBook.ai**](https://mlsysbook.ai/)—a comprehensive open-source textbook on machine learning systems engineering published by MIT Press. The book covers everything from deep learning framework internals to distributed ML infrastructure, with a strong emphasis on engineering trade-offs and quantitative analysis. What makes it particularly valuable is the supporting ecosystem: TinyTorch (build your own framework), interactive labs, and real-world deployment case studies.
+
+The combination of Systems for AI lectures + CMU 642 materials + research with Gokhale should give me a comprehensive foundation in modern ML systems.
 
 ## Visual Timeline
 
@@ -238,6 +240,12 @@ What do all these roles have in common?
 3. **Distributed systems knowledge** - Multi-GPU, multi-node, communication primitives
 4. **Performance obsession** - Profiling, bottleneck analysis, hardware-software co-design
 5. **Transformer/LLM expertise** - The market is all about generative AI now
+
+## Resources That Shaped This Roadmap
+
+One of the most valuable resources I found was [**csdiy.wiki**](https://csdiy.wiki/en/)—a comprehensive self-learning guide to computer science created by a Peking University student documenting their three-year self-taught journey. The site curates high-quality university courses from MIT, Stanford, UC Berkeley, and CMU across all CS domains.
+
+This is where I discovered several of the courses I’m following, including the CMU deep learning systems and ML compilers courses. What makes csdiy.wiki particularly useful is that it’s not just a list of links—it provides context on difficulty levels, prerequisites, and learning outcomes, plus it often links to community-contributed solutions and project implementations. For anyone building their own CS self-study curriculum, this is a great starting point.
 
 ## What Success Looks Like
 
