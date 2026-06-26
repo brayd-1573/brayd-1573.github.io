@@ -73,6 +73,8 @@ By the end, I'll understand how deep learning frameworks work at every layer of 
 
 **What I'm building:** Five homework assignments (HW0-HW4) incrementally building Needle, plus a substantial final project implementing new features.
 
+**Course level:** This is an advanced course with serious prerequisites. You need prior experience with systems programming (CMU 15-213 or equivalent), linear algebra, calculus, probability, and machine learning fundamentals. The course also requires proficiency in both Python and C++. Homework 0 serves as a diagnostic—if you're not comfortable with all the concepts there, you'll struggle. This isn't a beginner-friendly introduction; it's designed for students who already have the foundations and want to understand how the systems actually work.
+
 ### Phase 2: ML Compilers (August - Late August)
 
 **Course:** [MLC: Machine Learning Compilation](https://mlc.ai/summer22/)
@@ -128,6 +130,8 @@ I'll work through this material throughout the fall, culminating in a research p
 
 The combination of Systems for AI lectures + CMU 642 materials + research with Gokhale should give me a comprehensive foundation in modern ML systems.
 
+**Course level:** CMU 15-442 is the undergraduate version, 15-642 is graduate level. Both cover similar content but 642 has more rigorous expectations. Since I'm doing this as an independent study rather than for official CMU credit, I'm treating it as the graduate version—working through the harder problem sets and aiming for that level of depth. The course is designed for students who want to pursue ML systems research or engineering roles, so it assumes you already have ML fundamentals down and focuses on the systems side.
+
 ## Visual Timeline
 
 ```
@@ -180,6 +184,62 @@ Each piece builds on the previous:
 By December, the goal is to move past just using frameworks and really understand how the whole stack fits together—from mathematical operations to automatic differentiation to compilation to hardware execution to distributed systems.
 
 One major goal for me this time is to avoid burning out—I’ve stretched myself too thin in the past, and I want to make sure I actually understand what I’m studying instead of just getting through it.
+
+## Learning from the Market: Job Descriptions as a Roadmap
+
+One habit I’ve developed is reading through job descriptions for roles I’m targeting. It’s a reality check—these aren’t theoretical courses, they’re the actual skills companies need. Here are a few positions I’ve been studying:
+
+### [NVIDIA - Senior Software Engineer, CUDA Deep Learning Systems](https://www.linkedin.com/jobs/view/4415138369/)
+**What they want:** 8+ years of C++/Python, deep transformer knowledge, CUDA kernel optimization, distributed training at cluster scale. They’re building "novel systems optimizations for advanced deep learning models at the intersection of high-level DL frameworks and low-level CUDA."
+
+**What I’m learning:** This is exactly why I’m doing CMU 414. They want people who can move between PyTorch-level abstractions and raw CUDA kernels. Building Needle forces me to understand both layers.
+
+**Salary:** $184K–$356K depending on level
+
+### [Meta - Software Engineer, SystemML (Scaling/Performance)](https://www.linkedin.com/jobs/view/4427304628/)
+**What they want:** Experience with distributed ML training, GPU architecture, CUDA, PyTorch internals, NCCL, and parallelism strategies (FSDP, Tensor Parallel, Pipeline Parallel). The team works on "reliable and highly scalable distributed ML training on Meta’s large-scale GPU training infra with a focus on GenAI/LLM scaling."
+
+**What I’m learning:** This is the distributed systems piece. My independent study on LLM inference/serving needs to cover these parallelism strategies. The Systems for AI course covers NCCL and cluster networking—exactly what they’re asking for.
+
+**Salary:** $154K–$217K plus equity
+
+### [NVIDIA - High-Performance LLM Training Engineer (New Grad)](https://www.linkedin.com/jobs/view/4427781384/)
+**What they want:** MS in CS/EE/CE, deep learning expertise, GPU architecture knowledge, C++/Python/CUDA proficiency, performance analysis skills. They want people who can "analyze, profile, and optimize AI training workloads on innovative hardware."
+
+**What I’m learning:** This is a new grad role (my target timeline), and they want exactly what I’m building toward. The course stack I’m taking—DL systems, compilers, architecture, Systems for AI—maps directly to their requirements.
+
+**Salary:** $124K–$195K for new grads
+
+### [Anthropic - Performance Engineer, GPU](https://www.linkedin.com/jobs/view/4322320290/)
+**What they want:** CUDA/Triton/CUTLASS, PyTorch/JAX internals, kernel fusion, distributed communication (NCCL, NVLink), quantization (INT8/FP8). The role spans "custom kernel development to distributed system architectures" and orchestrating thousands of GPUs.
+
+**What I’m learning:** Anthropic is pushing frontier models, so they need the full stack—from low-level kernel optimization to multi-node coordination. This validates why I need both the systems programming side (414) and the distributed systems side (642/Systems for AI).
+
+**Salary:** $280K–$850K (wide range, likely based on experience/level)
+
+### [NVIDIA - Senior Deep Learning Performance Architect](https://www.linkedin.com/jobs/view/4395475638/)
+**What they want:** MS/PhD, 4+ years in parallel computing architectures, GPU/ASIC experience, understanding of transformer architectures, performance/power/area analysis. They’re "creating innovative hardware designs to advance parallel computing performance and energy efficiency."
+
+**What I’m learning:** This is more hardware-focused but requires deep understanding of how software (transformers, distributed training) maps to hardware. Computer Architecture + Systems for AI should give me the foundation to understand these tradeoffs.
+
+**Salary:** $184K–$287K
+
+### [Oxmiq Labs - Compiler Engineer (GPU Backend)](https://www.linkedin.com/jobs/view/4427097485/)
+**What they want:** 5+ years compiler engineering, LLVM/MLIR expertise, GPU execution models, Triton kernel frameworks. They’re "designing compiler infrastructure for GPU-accelerated workloads, including lowering pipelines and code generation backends."
+
+**What I’m learning:** This is the ML compilers piece. The MLC course covers MLIR, lowering passes, and optimization. This is a more specialized path but shows there’s demand for people who understand the compilation stack.
+
+### The Pattern
+
+What do all these roles have in common?
+
+1. **Deep understanding of the full stack** - You can’t just know PyTorch, you need to know what happens under the hood
+2. **Systems programming skills** - C++, CUDA, low-level optimization
+3. **Distributed systems knowledge** - Multi-GPU, multi-node, communication primitives
+4. **Performance obsession** - Profiling, bottleneck analysis, hardware-software co-design
+5. **Transformer/LLM expertise** - The market has shifted; it’s all about generative AI now
+
+My course plan isn’t random. It’s reverse-engineered from what these companies are hiring for. I can’t apply to most of these roles yet—I don’t have the experience. But by Fall 2026, I should be able to speak their language and demonstrate I’m building the right foundations.
 
 ## What Success Looks Like
 
