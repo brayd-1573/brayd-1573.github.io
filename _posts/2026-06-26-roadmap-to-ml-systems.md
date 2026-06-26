@@ -197,9 +197,10 @@ By the end of Fall 2026, I want to:
 - **Be ready** for summer 2027 ML systems internships at companies pushing the frontier
 
 
+
 ## Learning from the Market
 
-One habit I’ve developed is reading through job descriptions for roles I’m targeting. Here are a few positions I’ve saved:
+One habit I’ve developed is reading through job descriptions for roles I'll eventually target. Here are a few positions I’ve saved:
 
 ### [NVIDIA - Senior Software Engineer, CUDA Deep Learning Systems](https://www.linkedin.com/jobs/view/4415138369/)
 **What they want:** 8+ years of C++/Python, deep transformer knowledge, CUDA kernel optimization, distributed training at cluster scale. They’re building "novel systems optimizations for advanced deep learning models at the intersection of high-level DL frameworks and low-level CUDA."
@@ -251,15 +252,6 @@ What do all these roles have in common?
 4. **Performance obsession** - Profiling, bottleneck analysis, hardware-software co-design
 5. **Transformer/LLM expertise** - The market is all about generative AI now
 
-
-## Accountability
-
-This blog is my commitment device. I'll be posting:
-
-- **Weekly progress updates** during the summer courses
-- **Technical deep-dives** on interesting problems I encounter
-- **Project showcases** when I complete major milestones
-- **Research notes** from my independent study
 
 If you're on a similar journey or interested in ML systems, let's connect. You can find me on [GitHub](https://github.com/brayd-1573) or reach out via [email](mailto:brayden.cox2005@icloud.com).
 
