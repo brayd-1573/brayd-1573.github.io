@@ -42,7 +42,7 @@ To understand where I'm going, it helps to know where I've been. Here's the acad
 - Data Structures (CS 2201)
 - Math Reasoning (MATH 2100)
 - Economic Statistics (ECON 1500)
-- Quantitative Methods: Statistical Analysis (ECON 2400)
+- Quantitative Methods: Statistical Analysis (BME 2400)
 
 **Spring 2026**
 - Probability (MATH 3640)
@@ -50,8 +50,9 @@ To understand where I'm going, it helps to know where I've been. Here's the acad
 - Introduction to Topology (MATH 3200)
 - Ordinary Differential Equations (MATH 2610)
 - Intermediate Software Design (CS 3251)
+- Directed Reading Program (Measure Theory/Stochastic Calc)
 
-That spring semester—the one with topology and all that graduate-level math—was my breaking point. But it also clarified what I actually wanted to do. Luckily, I now have a solid mathematical foundation and decent programming fundamentals, so I can focus fully on ML Systems.
+That spring semester—the one with analysis and all that graduate-level math—was my breaking point. But it also clarified what I actually wanted to do. Luckily, I now have a solid mathematical foundation and decent programming fundamentals, so I can focus fully on ML Systems.
 
 ## The Roadmap: Summer 2026 - Fall 2026
 

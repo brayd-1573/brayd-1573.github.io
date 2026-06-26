@@ -1,20 +1,7 @@
-/* Avatar centering and zoom fix for sidebar circular avatar */
-/* Targets all possible selectors used by Chirpy theme */
-#sidebar .site-avatar img,
-#sidebar .profile-wrapper img,
-#sidebar img[src*="avatar"],
-#sidebar .avatar img,
-.sidebar .site-avatar img,
-.sidebar .profile-wrapper img,
-.sidebar img[src*="avatar"],
-.sidebar .avatar img,
-.profile-img,
-img.avatar,
-.avatar img {
-  object-fit: cover !important;
-  object-position: center center !important;
-  width: 100% !important;
-  height: 100% !important;
-  transform: scale(1.3) !important;
-  transform-origin: center center !important;
+/* Avatar image centering fix for sidebar */
+#avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
 }

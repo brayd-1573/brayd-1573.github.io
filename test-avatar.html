@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Test</title>
+    <style>
+        body {
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+            background: #1a1a1a;
+            font-family: system-ui;
+            color: white;
+        }
+
+        .test-container {
+            text-align: center;
+        }
+
+        /* Chirpy theme's default avatar styles */
+        #avatar {
+            display: block;
+            width: 7rem;
+            height: 7rem;
+            overflow: hidden;
+            border-radius: 50%;
+            box-shadow: #555 0 0 0 2px;
+            transform: translateZ(0);
+            margin: 0 auto;
+        }
+
+        /* OLD FIX - what was previously attempted */
+        .old-fix #avatar img {
+            object-fit: cover !important;
+            object-position: center center !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: scale(1.3) !important;
+            transform-origin: center center !important;
+        }
+
+        /* NEW FIX - current custom.css */
+        .new-fix #avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* WITHOUT FIX */
+        .no-fix #avatar img {
+            /* No styles - browser defaults */
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container no-fix">
+        <h3>WITHOUT Fix</h3>
+        <a href="#" id="avatar" class="rounded-circle">
+            <img src="assets/images/KirklandHall_Spring-scaled.jpg" width="112" height="112" alt="avatar">
+        </a>
+    </div>
+
+    <div class="test-container old-fix">
+        <h3>OLD Fix (scale 1.3)</h3>
+        <a href="#" id="avatar" class="rounded-circle">
+            <img src="assets/images/KirklandHall_Spring-scaled.jpg" width="112" height="112" alt="avatar">
+        </a>
+    </div>
+
+    <div class="test-container new-fix">
+        <h3>NEW Fix (no scale)</h3>
+        <a href="#" id="avatar" class="rounded-circle">
+            <img src="assets/images/KirklandHall_Spring-scaled.jpg" width="112" height="112" alt="avatar">
+        </a>
+    </div>
+</body>
+</html>
