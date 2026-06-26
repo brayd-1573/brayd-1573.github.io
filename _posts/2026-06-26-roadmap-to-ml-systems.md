@@ -1,5 +1,5 @@
 ---
-title: "My Roadmap to ML Systems Engineering: Summer 2026 Through Fall Semester"
+title: "My Roadmap for Summer 2026 Through Fall Semester"
 date: 2026-06-26 09:00:00 -0500
 categories: [Learning, ML Systems]
 tags: [roadmap, deep-learning, ml-compilers, vanderbilt, career-pivot]
@@ -95,7 +95,7 @@ This course covers the systematic techniques for handling these challenges: ML p
 
 ### Phase 3: Fall 2026 - Going Deep on Systems
 
-**Official Coursework:**
+**Official Coursework at Vanderbilt:**
 
 1. **Computer Architecture**
 2. **Algorithms**
@@ -137,17 +137,17 @@ The combination of Systems for AI lectures + CMU 642 materials + research with G
 ```
 SUMMER 2026
 ═══════════════════════════════════════════════════════════════
-June 26 ─────────────────────── August 1 ──────────── August 26
+June 26 ─────────────────────── August 7 ──────────── August 26
    │                                 │                     │
    │                                 │                     │
-   ▼                                 ▼                     ▼
-┌──────────────────────────────┐ ┌──────────────────┐   │
-│  CMU 414: DL Systems         │ │ MLC: ML          │   │
-│  • Building Needle framework │ │ Compilers        │   │
-│  • Auto differentiation      │ │ • Optimization   │   │
-│  • CUDA backends             │ │ • Deployment     │   │
-│  • HW0-HW4 + Final Project   │ │                  │   │
-└──────────────────────────────┘ └──────────────────┘   │
+   ▼                                 ▼                     │
+┌──────────────────────────────┐ ┌──────────────────┐      │
+│  CMU 414: DL Systems         │ │ MLC: ML          │      │
+│  • Building Needle framework │ │ Compilers        │      │
+│  • Auto differentiation      │ │ • Optimization   │      │
+│  • CUDA backends             │ │ • Deployment     │     /
+│  • HW0-HW4 + Final Project   │ │                  │    │
+└──────────────────────────────┘ └──────────────────┘    │
                                                          │
 FALL 2026                                                │
 ═════════════════════════════════════════════════════════▼══════
@@ -161,14 +161,14 @@ FALL 2026                                                │
          │  ───────────────        │                   │  ──────────────────  │
          │  • Computer Arch        │                   │  Materials:          │
          │  • Algorithms           │                   │  • CMU 642: ML Sys   │
-         │  • Applied/Found ML     │                   │  • Research project  │
+         │  • Applied/Found ML     │                   │  • MLSysBook.ai      │
          │  • Systems for AI (Aud) │                   │                      │
          │                         │                   │  Supervisor:         │
          │  Focus: GPU/TPU arch,   │◄──────────────────┤  Prof. Gokhale       │
-         │  distributed training,  │   Synergy         │                      │
+         │  distributed training,  │      Synergy      │                      │
          │  inference systems      │                   │  Goal: LLM inference │
          └─────────────────────────┘                   │  & serving project   │
-                                                        └──────────────────────┘
+                                                       └──────────────────────┘
 ```
 
 ## Why This Path?
@@ -187,7 +187,7 @@ One major goal for me this time is to avoid burning out—I’ve stretched mysel
 
 ## Learning from the Market: Job Descriptions as a Roadmap
 
-One habit I’ve developed is reading through job descriptions for roles I’m targeting. It’s a reality check—these aren’t theoretical courses, they’re the actual skills companies need. Here are a few positions I’ve been studying:
+One habit I’ve developed is reading through job descriptions for roles I’m targeting. Here are a few positions I’ve saved:
 
 ### [NVIDIA - Senior Software Engineer, CUDA Deep Learning Systems](https://www.linkedin.com/jobs/view/4415138369/)
 **What they want:** 8+ years of C++/Python, deep transformer knowledge, CUDA kernel optimization, distributed training at cluster scale. They’re building "novel systems optimizations for advanced deep learning models at the intersection of high-level DL frameworks and low-level CUDA."
@@ -237,9 +237,7 @@ What do all these roles have in common?
 2. **Systems programming skills** - C++, CUDA, low-level optimization
 3. **Distributed systems knowledge** - Multi-GPU, multi-node, communication primitives
 4. **Performance obsession** - Profiling, bottleneck analysis, hardware-software co-design
-5. **Transformer/LLM expertise** - The market has shifted; it’s all about generative AI now
-
-My course plan isn’t random. It’s reverse-engineered from what these companies are hiring for. I can’t apply to most of these roles yet—I don’t have the experience. But by Fall 2026, I should be able to speak their language and demonstrate I’m building the right foundations.
+5. **Transformer/LLM expertise** - The market is all about generative AI now
 
 ## What Success Looks Like
 
