@@ -5,8 +5,9 @@ export const site = {
   url: 'https://brayd-1573.github.io',
   title: 'Brayden Cox · ML Systems & LLM Inference',
   description:
-    'Brayden Cox studies math and computer science at Vanderbilt and builds LLM inference systems: kernels, KV caches, batching and scheduling. Writing, projects, and a weekly LLM inference rundown.',
+    'Brayden Cox studies math and computer science at Vanderbilt and builds LLM inference systems: kernels, KV caches, batching and scheduling. Blog, projects, and a weekly inference rundown & digest.',
   role: 'ML systems · LLM inference',
+  rundown: 'Inference Rundown & Weekly Digest',
   school: 'Mathematics + Computer Science, Vanderbilt University',
   email: 'brayden.cox2005@icloud.com',
   github: 'https://github.com/brayd-1573',
@@ -14,8 +15,8 @@ export const site = {
 };
 
 export const nav = [
-  { href: '/#work', label: 'Work' },
-  { href: '/posts/', label: 'Writing' },
+  { href: '/#projects', label: 'Projects' },
+  { href: '/posts/', label: 'Blog' },
   { href: '/rundown/', label: 'Rundown' },
   { href: '/about/', label: 'About' },
 ];
@@ -27,11 +28,11 @@ export const focus = [
   },
   {
     k: 'Kernels',
-    v: 'Learning to write and profile GPU kernels in CUDA, Triton and Metal, and to reason about them with roofline analysis.',
+    v: 'Learning to write and profile GPU kernels in CUDA and Triton, and to reason about them with roofline analysis.',
   },
   {
-    k: 'Systems for AI',
-    v: 'Fall 2026: Computer Architecture, Systems for AI, and an independent study on LLM inference and serving.',
+    k: 'Research',
+    v: 'Undergraduate research on GPU internals and performance under LLM workloads, with Prof. Aniruddha Gokhale.',
   },
   {
     k: 'Upstream',
@@ -62,25 +63,11 @@ export const projects: Project[] = [
       'KV cache and quantized decode matvec, benchmarked against a synchronized baseline',
       'Continuous batching, chunked prefill and paged KV with FlashAttention-style kernels',
     ],
-    stack: ['Python', 'C++', 'Metal', 'MLX'],
+    stack: ['Python', 'C++', 'MLX'],
     credit: { label: 'Course by skyzh', url: 'https://github.com/skyzh/tiny-llm' },
   },
   {
-    name: 'tiny-vllm',
-    url: 'https://github.com/brayd-1573/tiny-vllm',
-    status: 'Up next',
-    summary:
-      'A small, high-performance inference engine in C++ and CUDA: every op as a CUDA kernel, serving Llama 3.2 1B.',
-    points: [
-      'Safetensors loading and a full prefill + decode forward pass',
-      'Static then continuous batching, online softmax and FlashAttention-style attention',
-      'Paged KV cache and a PagedAttention CUDA kernel',
-    ],
-    stack: ['C++', 'CUDA', 'cuBLAS'],
-    credit: { label: 'Course by jmaczan', url: 'https://github.com/jmaczan/tiny-vllm' },
-  },
-  {
-    name: 'Inference Rundown',
+    name: 'Inference Rundown & Weekly Digest',
     url: '/rundown/',
     status: 'Live · weekly',
     summary:

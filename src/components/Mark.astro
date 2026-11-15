@@ -1,7 +1,10 @@
 ---
 // Brand mark: a 3x3 block table with a few blocks allocated (paged KV cache motif).
+// Hover/press animation lives in global.css (.brand) + Base.astro (wordmark decode).
 const { class: cls } = Astro.props;
 const on = new Set([0, 1, 4, 7]);
+// Ripple order: a diagonal sweep from the top-left block.
+const delay = (i: number) => ((i % 3) + Math.floor(i / 3)) * 55;
 ---
 
 <svg class={cls} viewBox="0 0 24 24" aria-hidden="true">
@@ -12,6 +15,8 @@ const on = new Set([0, 1, 4, 7]);
         y={Math.floor(i / 3) * 8 + 1}
         width="6"
         height="6"
+        class={on.has(i) ? 'on' : ''}
+        style={`--d:${delay(i)}ms`}
         fill={on.has(i) ? 'var(--accent)' : 'none'}
         stroke={on.has(i) ? 'var(--accent)' : 'currentColor'}
         stroke-opacity={on.has(i) ? 1 : 0.45}

@@ -28,8 +28,8 @@ const isCurrent = (href: string) =>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="alternate" type="application/rss+xml" title={`${site.name} · Writing`} href="/feed.xml" />
-    <link rel="alternate" type="application/rss+xml" title="Inference Rundown" href="/rundown/feed.xml" />
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} · Blog`} href="/feed.xml" />
+    <link rel="alternate" type="application/rss+xml" title="Inference Rundown & Weekly Digest" href="/rundown/feed.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="theme-color" content="#050605" />
     <meta name="author" content={site.name} />
@@ -56,7 +56,7 @@ const isCurrent = (href: string) =>
       <div class="wrap">
         <a class="brand" href="/" aria-label={`${site.name}, home`}>
           <Mark class="brand-mark" />
-          <span>{site.name}</span>
+          <span class="wm">{site.name}</span>
         </a>
         <div style="display:flex;align-items:center;gap:4px">
           <nav class="nav" id="nav" aria-label="Primary">
@@ -113,6 +113,38 @@ const isCurrent = (href: string) =>
         }
       });
       initMotion();
+
+      // Logo: wordmark decodes on hover/focus; a tap on touch screens plays the mark animation.
+      const brand = document.querySelector<HTMLElement>('.brand');
+      const wm = brand?.querySelector<HTMLElement>('.wm');
+      if (brand && wm && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const text = wm.textContent ?? '';
+        const glyphs = '01#/<>_=+*';
+        let raf = 0;
+        const decode = () => {
+          cancelAnimationFrame(raf);
+          const t0 = performance.now();
+          const frame = (now: number) => {
+            const n = Math.floor(((now - t0) / 420) * text.length);
+            wm.textContent = text
+              .split('')
+              .map((c, i) => (i < n || c === ' ' ? c : glyphs[(Math.random() * glyphs.length) | 0]))
+              .join('');
+            if (n < text.length) raf = requestAnimationFrame(frame);
+            else wm.textContent = text;
+          };
+          raf = requestAnimationFrame(frame);
+        };
+        brand.addEventListener('mouseenter', decode);
+        brand.addEventListener('focus', decode);
+        brand.addEventListener('touchstart', () => {
+          brand.classList.remove('play');
+          void brand.offsetWidth; // restart the CSS animation
+          brand.classList.add('play');
+          decode();
+          setTimeout(() => brand.classList.remove('play'), 900);
+        }, { passive: true });
+      }
     </script>
   </body>
 </html>

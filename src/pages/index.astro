@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import KVSim from '../components/KVSim.astro';
+import BatchSim from '../components/BatchSim.astro';
 import SectionHead from '../components/SectionHead.astro';
 import PostList from '../components/PostList.astro';
 import { site, focus, projects } from '../data/profile';
@@ -24,8 +25,8 @@ const d = latest?.data;
           I learn by building serving engines from scratch: kernels, KV caches, batching and scheduling.
         </p>
         <div class="hero-cta" data-reveal style="--d:320ms">
-          <a class="btn primary" href="#work">See the work <span class="arr" aria-hidden="true">→</span></a>
-          <a class="btn" href="/rundown/">Inference Rundown <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn primary" href="#projects">See the projects <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn" href="/rundown/">Weekly digest <span class="arr" aria-hidden="true">→</span></a>
         </div>
       </div>
       <div class="hero-viz" data-reveal style="--d:150ms">
@@ -36,7 +37,7 @@ const d = latest?.data;
       <dl class="spec">
         <div><dt class="label">Studying</dt><dd>Math + CS, Vanderbilt</dd></div>
         <div><dt class="label">Focus</dt><dd>LLM inference & serving</dd></div>
-        <div><dt class="label">Stack</dt><dd>Python · C++ · CUDA · Metal</dd></div>
+        <div><dt class="label">Stack</dt><dd>Python · C++ · CUDA</dd></div>
         <div><dt class="label">Seeking</dt><dd>Summer 2027 internships</dd></div>
       </dl>
     </div>
@@ -61,9 +62,9 @@ const d = latest?.data;
   </section>
 
   <!-- ============ WORK ============ -->
-  <section class="sec" id="work">
+  <section class="sec" id="projects">
     <div class="wrap">
-      <SectionHead n="02" label="Work" title="Projects." dim="Small engines, built to understand big ones." />
+      <SectionHead n="02" label="Projects" title="Small engines," dim="built to understand big ones." />
       <div class="projects">
         {
           projects.map((p, i) => (
@@ -105,12 +106,19 @@ const d = latest?.data;
     </div>
   </section>
 
-  <!-- ============ WRITING ============ -->
+  <!-- ============ FIG.1 BAND ============ -->
+  <section class="band" aria-label="Continuous batching illustration">
+    <div class="wrap" data-reveal>
+      <BatchSim />
+    </div>
+  </section>
+
+  <!-- ============ BLOG ============ -->
   <section class="sec">
     <div class="wrap">
-      <SectionHead n="03" label="Writing" title="Notes from the stack." dim="Learning in public." />
+      <SectionHead n="03" label="Blog" title="Notes from the stack." dim="Learning in public." />
       <PostList posts={posts} />
-      <div class="more"><a class="btn" href="/posts/">All writing <span class="arr" aria-hidden="true">→</span></a></div>
+      <div class="more"><a class="btn" href="/posts/">All posts <span class="arr" aria-hidden="true">→</span></a></div>
     </div>
   </section>
 
@@ -119,7 +127,7 @@ const d = latest?.data;
     d && latest && (
       <section class="sec">
         <div class="wrap">
-          <SectionHead n="04" label="Inference Rundown" title="What moved in inference this week." />
+          <SectionHead n="04" label={site.rundown} title="What moved this week." dim="Every Sunday." />
           <a class="rd-promo" href={`/rundown/${latest.id}/`} data-reveal>
             <div class="rd-promo-top">
               <span class="chip on live">
@@ -344,6 +352,14 @@ const d = latest?.data;
 
   .more {
     margin-top: 32px;
+  }
+
+  .band {
+    padding-block: clamp(40px, 6vw, 72px);
+    border-top: 1px solid var(--line);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -12px -12px;
   }
 
   .rd-promo {

@@ -1,0 +1,322 @@
+---
+// fig.1: static vs continuous batching on the same request stream. Each column is one engine
+// step; each row is a batch slot. Bright cell = prefill, tinted cells = decode, empty = idle slot.
+// Counters (utilization, tokens) are computed by the simulation itself.
+---
+
+<figure class="bs" aria-label="Animated diagram comparing static and continuous batching. Static batching leaves slots idle until the longest request in a batch finishes; continuous batching refills a slot as soon as its request completes.">
+  <div class="bs-top label">
+    <span><span class="acc">fig.1</span> static vs continuous batching · same request stream</span>
+    <span class="bs-legend" aria-hidden="true">
+      <span><i class="lg pre"></i>prefill</span>
+      <span><i class="lg dec"></i>decode</span>
+      <span><i class="lg idle"></i>idle slot</span>
+      <span class="bs-tag">sim</span>
+    </span>
+  </div>
+  <div class="bs-lanes">
+    <div class="bs-lane">
+      <div class="bs-name">
+        <span class="label">Static</span>
+        <dl class="label">
+          <div><dt>util</dt><dd data-k="s-util">0%</dd></div>
+          <div><dt>tokens</dt><dd data-k="s-tok">0</dd></div>
+        </dl>
+      </div>
+      <canvas data-lane="static" aria-hidden="true"></canvas>
+    </div>
+    <div class="bs-lane">
+      <div class="bs-name">
+        <span class="label acc">Continuous</span>
+        <dl class="label">
+          <div><dt>util</dt><dd data-k="c-util">0%</dd></div>
+          <div><dt>tokens</dt><dd data-k="c-tok">0</dd></div>
+        </dl>
+      </div>
+      <canvas data-lane="cont" aria-hidden="true"></canvas>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .bs {
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    padding: 16px;
+  }
+  .bs-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+  .bs-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: center;
+  }
+  .bs-legend > span {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .lg {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+  }
+  .lg.pre {
+    background: var(--accent);
+  }
+  .lg.dec {
+    background: color-mix(in srgb, var(--accent) 45%, var(--bg));
+  }
+  .lg.idle {
+    border: 1px solid var(--line-strong);
+  }
+  .bs-tag {
+    padding: 0 6px;
+    border: 1px solid var(--line-strong);
+  }
+  .bs-lanes {
+    display: grid;
+    gap: 12px;
+  }
+  .bs-lane {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+  }
+  @media (min-width: 760px) {
+    .bs-lane {
+      grid-template-columns: 150px 1fr;
+      gap: 20px;
+    }
+  }
+  .bs-name {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  @media (min-width: 760px) {
+    .bs-name {
+      flex-direction: column;
+      gap: 8px;
+      justify-content: center;
+    }
+  }
+  .bs-name dl {
+    display: flex;
+    gap: 16px;
+    margin: 0;
+    font-size: 10.5px;
+  }
+  .bs-name dd {
+    margin: 2px 0 0;
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .bs canvas {
+    display: block;
+    width: 100%;
+    height: 78px;
+  }
+</style>
+
+<script>
+  type Slot = { id: number; left: number; pre: boolean } | null;
+  type Cell = { kind: 'pre' | 'dec' | 'idle'; id: number };
+
+  const fig = document.querySelector<HTMLElement>('.bs');
+  if (fig) {
+    const SLOTS = 6;
+    const CELL = 10;
+    const GAP = 3;
+    const canvases = {
+      static: fig.querySelector<HTMLCanvasElement>('canvas[data-lane="static"]')!,
+      cont: fig.querySelector<HTMLCanvasElement>('canvas[data-lane="cont"]')!,
+    };
+    const stat = (k: string) => fig.querySelector<HTMLElement>(`[data-k="${k}"]`)!;
+
+    // One shared request stream (decode lengths), so both lanes see identical work.
+    let seed = 11;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const lengths: number[] = [];
+    const lenOf = (i: number) => {
+      while (lengths.length <= i) lengths.push(rnd() < 0.25 ? 26 + Math.floor(rnd() * 30) : 4 + Math.floor(rnd() * 14));
+      return lengths[i];
+    };
+
+    function makeLane(continuous: boolean) {
+      const slots: Slot[] = Array(SLOTS).fill(null);
+      const cols: Cell[][] = [];
+      let next = 0;
+      let busy = 0;
+      let total = 0;
+      let tokens = 0;
+      const admit = (s: number) => {
+        slots[s] = { id: next, left: lenOf(next), pre: true };
+        next++;
+      };
+      function step() {
+        if (continuous) {
+          for (let s = 0; s < SLOTS; s++) if (!slots[s]) admit(s);
+        } else if (slots.every((x) => !x)) {
+          for (let s = 0; s < SLOTS; s++) admit(s); // new batch only when the whole batch is done
+        }
+        const col: Cell[] = [];
+        for (let s = 0; s < SLOTS; s++) {
+          const r = slots[s];
+          total++;
+          if (!r) {
+            col.push({ kind: 'idle', id: -1 });
+            continue;
+          }
+          busy++;
+          if (r.pre) {
+            r.pre = false;
+            col.push({ kind: 'pre', id: r.id });
+          } else {
+            col.push({ kind: 'dec', id: r.id });
+            tokens++;
+            if (--r.left <= 0) slots[s] = null;
+          }
+        }
+        cols.push(col);
+        if (cols.length > 400) cols.shift();
+      }
+      return { step, cols, stats: () => ({ util: busy / total, tokens }) };
+    }
+
+    const lanes = { static: makeLane(false), cont: makeLane(true) };
+    let colors = { pre: '', dec: [] as string[], idle: '' };
+    function readColors() {
+      const cs = getComputedStyle(document.documentElement);
+      const accent = cs.getPropertyValue('--accent').trim();
+      const bg = cs.getPropertyValue('--bg-elev').trim();
+      const line = cs.getPropertyValue('--line-strong').trim();
+      // Mix in JS (tokens are hex): canvas fillStyle support for color-mix() is uneven.
+      const rgb = (hex: string) => {
+        const n = parseInt(hex.replace('#', ''), 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      };
+      const a = rgb(accent);
+      const b = rgb(bg);
+      const mix = (p: number) => `rgb(${a.map((v, i) => Math.round((v * p + b[i] * (100 - p)) / 100)).join(',')})`;
+      colors = { pre: accent, dec: [mix(58), mix(40), mix(30), mix(48)], idle: line };
+    }
+
+    let dpr = 1;
+    function size() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      for (const c of Object.values(canvases)) {
+        c.width = Math.round(c.clientWidth * dpr);
+        c.height = Math.round(c.clientHeight * dpr);
+      }
+    }
+
+    function drawLane(c: HTMLCanvasElement, cols: Cell[][], offset: number) {
+      const ctx = c.getContext('2d')!;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const pitch = CELL + GAP;
+      const rowPitch = h / SLOTS;
+      const cellH = Math.max(4, rowPitch - GAP);
+      const visible = Math.ceil(w / pitch) + 1;
+      const start = Math.max(0, cols.length - visible);
+      for (let i = start; i < cols.length; i++) {
+        const x = w - (cols.length - i) * pitch + offset * pitch;
+        if (x + CELL < 0) continue;
+        cols[i].forEach((cell, s) => {
+          const y = s * rowPitch;
+          if (cell.kind === 'idle') {
+            ctx.strokeStyle = colors.idle;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 0.5, y + 0.5, CELL - 1, cellH - 1);
+          } else {
+            ctx.fillStyle = cell.kind === 'pre' ? colors.pre : colors.dec[cell.id % colors.dec.length];
+            ctx.fillRect(x, y, CELL, cellH);
+          }
+        });
+      }
+    }
+
+    function draw(offset = 0) {
+      drawLane(canvases.static, lanes.static.cols, offset);
+      drawLane(canvases.cont, lanes.cont.cols, offset);
+    }
+
+    function tick() {
+      lanes.static.step();
+      lanes.cont.step();
+      const s = lanes.static.stats();
+      const c = lanes.cont.stats();
+      stat('s-util').textContent = `${Math.round(s.util * 100)}%`;
+      stat('c-util').textContent = `${Math.round(c.util * 100)}%`;
+      stat('s-tok').textContent = s.tokens.toLocaleString('en-US');
+      stat('c-tok').textContent = c.tokens.toLocaleString('en-US');
+    }
+
+    readColors();
+    size();
+    for (let i = 0; i < 140; i++) tick(); // warm up so the band is full on first paint
+    draw();
+
+    new MutationObserver(() => {
+      readColors();
+      draw();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    let rz = 0;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(rz);
+      rz = requestAnimationFrame(() => {
+        size();
+        draw();
+      });
+    });
+
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Smooth scroll: one engine step every STEP ms, interpolated between steps.
+      const STEP = 140;
+      let raf = 0;
+      let last = 0;
+      let acc = 0;
+      let visible = false;
+      const loop = (now: number) => {
+        if (!last) last = now;
+        acc += Math.min(100, now - last);
+        last = now;
+        while (acc >= STEP) {
+          acc -= STEP;
+          tick();
+        }
+        draw(1 - acc / STEP);
+        raf = requestAnimationFrame(loop);
+      };
+      const start = () => {
+        if (!raf && visible && !document.hidden) {
+          last = 0;
+          raf = requestAnimationFrame(loop);
+        }
+      };
+      const stop = () => {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      };
+      new IntersectionObserver(([e]) => {
+        visible = e.isIntersecting;
+        visible ? start() : stop();
+      }).observe(fig);
+      document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+    }
+  }
+</script>

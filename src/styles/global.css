@@ -337,6 +337,40 @@ pre {
   width: 22px;
   height: 22px;
   flex: none;
+  transition: transform 520ms var(--ease-out);
+}
+.brand-mark rect {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.brand:hover .brand-mark,
+.brand:focus-visible .brand-mark,
+.brand.play .brand-mark {
+  transform: rotate(90deg);
+}
+.brand:hover .brand-mark rect,
+.brand:focus-visible .brand-mark rect,
+.brand.play .brand-mark rect {
+  animation: blk 560ms var(--ease-out) var(--d, 0ms) both;
+}
+.brand:active .brand-mark {
+  transform: rotate(90deg) scale(0.82);
+  transition-duration: 120ms;
+}
+@keyframes blk {
+  35% {
+    fill: var(--accent);
+    stroke: var(--accent);
+    stroke-opacity: 1;
+    transform: scale(0.55);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+}
+.brand .wm {
+  display: inline-block;
+  min-width: 11ch;
 }
 .nav {
   display: flex;

@@ -1,12 +1,18 @@
 ---
 import Page from '../layouts/Page.astro';
+import { Picture } from 'astro:assets';
 import { site } from '../data/profile';
+import resumeImg from '../assets/resume.png';
+
+// To update: replace public/resume/Brayden_Cox_Resume.pdf, then re-render the preview image:
+//   qlmanage -t -s 2550 -o /tmp public/resume/Brayden_Cox_Resume.pdf && cp /tmp/Brayden_Cox_Resume.pdf.png src/assets/resume.png
+const resumePdf = '/resume/Brayden_Cox_Resume.pdf';
 
 const now = [
   ['Building', 'tiny-llm: an LLM serving stack on MLX, from matmul to continuous batching and paged attention.'],
-  ['Studying', 'Computer Architecture, Algorithms, ML, and Systems for AI at Vanderbilt.'],
-  ['Research', 'Independent study on LLM inference and serving with Prof. Aniruddha Gokhale.'],
-  ['Reading', 'vLLM internals, every week, through the Inference Rundown.'],
+  ['Studying', 'Computer Architecture, Algorithms and Machine Learning at Vanderbilt.'],
+  ['Research', 'Undergraduate research on GPU internals and performance under LLM workloads, with Prof. Aniruddha Gokhale.'],
+  ['Reading', 'vLLM internals, every week, through the Inference Rundown & Weekly Digest.'],
 ];
 ---
 
@@ -32,8 +38,8 @@ const now = [
         serving.
       </p>
       <p>
-        I learn in public. This site holds my <a href="/posts/">writing</a>, the <a href="/#work">projects</a> I'm
-        building, and the <a href="/rundown/">Inference Rundown</a>, a weekly briefing I generate to stay current on
+        I learn in public. This site holds my <a href="/posts/">blog</a>, the <a href="/#projects">projects</a> I'm
+        building, and the <a href="/rundown/">Inference Rundown & Weekly Digest</a>, a weekly briefing I generate to stay current on
         LLM inference and find places to contribute upstream.
       </p>
       <h2>What I'm looking for</h2>
@@ -59,9 +65,38 @@ const now = [
         <a class="btn primary" href={`mailto:${site.email}`}>Email me</a>
         <a class="btn" href={site.github}>GitHub ↗</a>
         <a class="btn" href={site.linkedin}>LinkedIn ↗</a>
+        <a class="btn" href="#resume">Résumé ↓</a>
       </div>
     </aside>
   </div>
+
+  <section class="resume" id="resume" aria-labelledby="resume-h">
+    <div class="wrap">
+      <div class="resume-head">
+        <div>
+          <p class="label" data-decode>Résumé</p>
+          <h2 id="resume-h" class="sec-title" data-reveal>The one-page version.</h2>
+        </div>
+        <div class="resume-actions">
+          <a class="btn primary" href={resumePdf} download="Brayden_Cox_Resume.pdf">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10"></path></svg>
+            Download PDF
+          </a>
+          <a class="btn" href={resumePdf} target="_blank" rel="noopener">Open in new tab ↗</a>
+        </div>
+      </div>
+      <a class="paper" href={resumePdf} target="_blank" rel="noopener" data-reveal>
+        <Picture
+          src={resumeImg}
+          formats={['avif', 'webp']}
+          widths={[640, 980, 1400, 1970]}
+          sizes="(min-width: 1000px) 880px, 100vw"
+          alt="Brayden Cox's one-page résumé: education at Vanderbilt, teaching and software engineering internship experience, undergraduate research, projects and technical skills. Open the PDF for selectable text."
+          loading="lazy"
+        />
+      </a>
+    </div>
+  </section>
 </Page>
 
 <style>
@@ -96,6 +131,48 @@ const now = [
   .now dd {
     margin: 6px 0 0;
     font-size: 15.5px;
+  }
+  .resume {
+    padding-block: clamp(56px, 8vw, 104px) clamp(72px, 10vw, 128px);
+    border-top: 1px solid var(--line);
+  }
+  .resume-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .resume-head .sec-title {
+    margin-top: 16px;
+  }
+  .resume-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .paper {
+    display: block;
+    max-width: 880px;
+    margin-inline: auto;
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    box-shadow:
+      0 1px 0 var(--line),
+      0 30px 80px -30px rgb(0 0 0 / 0.55);
+    transition:
+      transform 300ms var(--ease-out),
+      border-color 200ms ease;
+  }
+  .paper:hover {
+    border-color: var(--accent-line);
+    transform: translateY(-2px);
+  }
+  .paper :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
   }
   .links {
     display: flex;

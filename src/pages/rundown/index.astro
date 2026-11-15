@@ -4,20 +4,21 @@ import RundownNote from '../../components/RundownNote.astro';
 import { getIssues } from '../../lib/data';
 import { pad, plain, ymd } from '../../lib/md';
 import '../../styles/rundown.css';
+import { site } from '../../data/profile';
 
 const issues = await getIssues();
 const [latest, ...archive] = issues;
 ---
 
 <Base
-  title="Inference Rundown"
-  description="A weekly briefing on LLM inference: notable vLLM merges, open issues to contribute to, industry and hardware news, papers, talks, and the job market."
+  title={site.rundown}
+  description="A weekly briefing on LLM inference and AI systems: notable vLLM merges, open issues to contribute to, industry and hardware news, papers, talks, and the job market."
 >
   <div class="rd">
     <header class="rd-mast">
       <div class="wrap">
-        <p class="label" data-decode>[04] Inference Rundown · weekly</p>
-        <h1 class="rd-headline" data-reveal>What moved in LLM inference this week.</h1>
+        <p class="label" data-decode>[04] {site.rundown}</p>
+        <h1 class="rd-headline" data-reveal>What moved in AI systems this week.</h1>
         <p class="lede" data-reveal style="--d:120ms">
           Notable vLLM merges, open issues I could contribute to, industry and hardware news, papers, talks, and the job
           market, in one page every Sunday.

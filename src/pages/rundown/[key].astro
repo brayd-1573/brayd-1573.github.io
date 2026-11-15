@@ -7,6 +7,7 @@ import RundownNote from '../../components/RundownNote.astro';
 import { getIssues } from '../../lib/data';
 import { inline, block, pad, plain, ymd } from '../../lib/md';
 import '../../styles/rundown.css';
+import { site } from '../../data/profile';
 
 export async function getStaticPaths() {
   const issues = await getIssues();
@@ -36,13 +37,13 @@ const head = Object.fromEntries(sections.map((s) => [s.id, s]));
 const fmtFit = (n: number) => `Fit ${n} of 5`;
 ---
 
-<Base title={`Inference Rundown #${d.issue}`} description={plain(d.headline)} type="article" published={new Date(`${entry.id}T12:00:00Z`)}>
+<Base title={`${site.rundown} #${d.issue}`} description={plain(d.headline)} type="article" published={new Date(`${entry.id}T12:00:00Z`)}>
   <div class="rd">
     <!-- masthead -->
     <header class="rd-mast">
       <div class="wrap">
         <div class="rd-mast-row">
-          <a class="label" href="/rundown/">← Inference Rundown</a>
+          <a class="label" href="/rundown/">← {site.rundown}</a>
           <span class="label">{ymd(d.window.from)} – {ymd(d.window.to, true)}</span>
         </div>
         <div class="rd-issue-no">
