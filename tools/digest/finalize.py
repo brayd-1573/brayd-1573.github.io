@@ -21,7 +21,7 @@ DATA_DIR = os.path.join(ROOT, "_data", "digests")
 PAGE_DIR = os.path.join(ROOT, "_digests")
 
 LIMITS = {  # key: (min, max)
-    "stats": (2, 4), "prs": (3, 5), "contribute": (2, 3), "news": (3, 8),
+    "stats": (2, 4), "prs": (3, 3), "contribute": (2, 3), "news": (3, 6),
     "papers": (2, 5), "videos": (0, 5), "releases": (0, 6), "followups": (0, 5),
 }
 ITEM_KEYS = {

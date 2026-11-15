@@ -34,7 +34,7 @@ In `--issue` output, `open_prs_mentioning` with a recent PR means the issue is p
    If last week had picks: `python3 tools/digest/gather.py --followup <n1,n2,...>`.
    If `errors` lists a failed source, fill that gap with at most one web search.
 3. **Merged PRs**: from `vllm_merged_prs.top_candidates` (pre-ranked, noise removed), shortlist
-   up to 6 and run `gather.py --pr <n>` on each. Publish the 3–5 most significant: new kernels,
+   up to 5 and run `gather.py --pr <n>` on each. Publish exactly the 3 most significant: new kernels,
    scheduler/KV-cache/attention changes, real perf wins with numbers, architectural shifts.
    Prefer ones that map to what Brayden has built. Set `read_the_diff: true` on 1–2 whose diff
    is small enough and instructive enough to actually read.
@@ -46,7 +46,7 @@ In `--issue` output, `open_prs_mentioning` with a recent PR means the issue is p
    ("still open, no PR yet", "claimed by someone else", "fixed in #123"). **Never** comment
    on whether Brayden worked on it.
 5. **Everything else**, from the bundle (plus capped searches):
-   - `news` (3–8): NVIDIA/AMD/hardware, CUDA/Triton/PyTorch changes, inference startups
+   - `news` (3–6): NVIDIA/AMD/hardware, CUDA/Triton/PyTorch changes, inference startups
      (funding, launches, pricing), market moves, notable discussions. Use `blog_feeds`,
      `hacker_news`, `releases`. Skip non-inference gossip unless it plausibly affects the
      inference market or jobs (then say how in one line).

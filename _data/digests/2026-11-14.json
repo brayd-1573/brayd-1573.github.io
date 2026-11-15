@@ -1,137 +1,263 @@
 {
-  "issue": 1,
-  "date": "2026-11-14",
-  "window": {"from": "2026-11-08", "to": "2026-11-15"},
-  "headline": "vLLM moves pipeline-parallel activations onto CUDA copy engines, cutting near-saturation TTFT 13–20%",
-  "tldr": "A heavy week for vLLM's distributed path: copy-engine PP transport is now on by default on NVLink, MoE kernels stop computing DP padding rows, and the extensible KV cache stopped OOMing during CUDA graph capture. Outside the code, Jensen Huang resigned as NVIDIA CEO and A100 resale prices kept sliding. The one thing to read: the [copy-engine PP PR](https://github.com/vllm-project/vllm/pull/65896) description. It shows how they found and fixed a light-load regression by moving the receive wait to first tensor use, which is a good lesson in overlapping communication with input prep.",
-  "stats": [
-    {"value": "400", "label": "vLLM PRs merged"},
-    {"value": "61", "label": "papers scanned"},
-    {"value": "4", "label": "vLLM blog posts"}
-  ],
-  "building": {
-    "note": "One public commit this week: the site itself, which now has the Rundown tab and the tooling that generates this page.",
-    "repos": [
-      {"name": "brayd-1573.github.io", "url": "https://github.com/brayd-1573/brayd-1573.github.io", "commits": 1,
-       "highlights": ["Add weekly Inference Rundown tab and generation tooling"]}
-    ],
-    "upstream": []
+ "issue": 1,
+ "date": "2026-11-14",
+ "window": {
+  "from": "2026-11-08",
+  "to": "2026-11-15"
+ },
+ "headline": "vLLM moves pipeline-parallel activations onto CUDA copy engines, cutting near-saturation TTFT 13–20%",
+ "tldr": "A heavy week for vLLM's distributed path: copy-engine PP transport is now on by default on NVLink, MoE kernels stop computing DP padding rows, and the extensible KV cache stopped OOMing during CUDA graph capture. Outside the code, Jensen Huang resigned as NVIDIA CEO and A100 resale prices kept sliding. The one thing to read: the [copy-engine PP PR](https://github.com/vllm-project/vllm/pull/65896) description. It shows how they found and fixed a light-load regression by moving the receive wait to first tensor use, which is a good lesson in overlapping communication with input prep.",
+ "stats": [
+  {
+   "value": "400",
+   "label": "vLLM PRs merged"
   },
-  "prs": [
-    {"number": 65896, "title": "[Perf][PP] Copy-engine PP transport, on by default where supported (NVLink only)",
-     "url": "https://github.com/vllm-project/vllm/pull/65896", "area": "distributed",
-     "summary": "Pipeline-parallel activations now move between stages with CUDA copy engines instead of NCCL send/recv, selected by `VLLM_PP_TRANSPORT` (`auto` default, `nccl`, `copy_engine`). The copy is one-sided: the sender sets a flag after writing, the receiver releases it after consuming. The receive is queued lazily on first tensor read (`AsyncIntermediateTensors`) so input prep overlaps the transfer.",
-     "why_it_matters": "Near saturation, median TTFT drops **13–20%** with 1.5–10K new tokens (p99 down 16–19% at the highest loads), with outputs matching NCCL exactly. Copy engines use 0 SMs, so they don't fight persistent kernels sized to the SM count. Caveat from the author: measured only on GB300 at PP=2/4 with one model.",
-     "read_the_diff": false},
-    {"number": 65972, "title": "[Perf][MoE] Skip DP padding rows in TRT-LLM monolithic MoE with vLLM's top-k",
-     "url": "https://github.com/vllm-project/vllm/pull/65972", "area": "moe",
-     "summary": "Under data parallelism every rank pads its batch to the largest rank's batch. The FlashInfer TRT-LLM monolithic MoE kernels (default on Blackwell for block-FP8/MXFP8) routed padded rows like real tokens. Now the runner routes with vLLM's top-k, which writes expert id -1 for padding, and calls the precomputed-routing op `trtllm_fp8_block_scale_routed_moe`, which skips them.",
-     "why_it_matters": "Padding is a large share of the work: **34–65%** of rows in decode steps with ≤32 rows per rank, and **37–84%** in mixed prefill+decode steps, because every rank pads to the one running prefill. A clear example of how batch shape under DP wastes compute that a single-GPU engine never sees.",
-     "read_the_diff": false},
-    {"number": 66523, "title": "[Bugfix] Extensible KV cache: release warmup's blocks before CUDA graph capture",
-     "url": "https://github.com/vllm-project/vllm/pull/66523", "area": "kv-cache",
-     "summary": "With the extensible KV cache (the MRV2 default), warmup's KV blocks still held memory that large CUDA graphs (e.g. encoder graphs) needed, so startup could OOM. The fix releases those blocks before capture, then `extend_kv_cache` commits the size measured after capture. Graphs captured with only the null block committed stay valid after the cache regrows.",
-     "why_it_matters": "`google/gemma-4-31B-it` with encoder CUDA graphs on 1× H100 went from `OutOfMemoryError` at startup to serving with 772 KV blocks (7.54 GiB) at `max_model_len=4096`. Worth reading if your paged KV cache and CUDA graphs share a memory budget: the ordering of warmup, capture, and KV allocation is the whole bug.",
-     "read_the_diff": true},
-    {"number": 66391, "title": "[Perf][KV Offload] Split the shared Tiering region and skip the scheduler pre-fault",
-     "url": "https://github.com/vllm-project/vllm/pull/66391", "area": "kv-offload",
-     "summary": "The CPU KV-offload tier used one `/dev/shm` file per engine, so every worker's pre-fault serialized on page-cache inserts, and the scheduler then pre-faulted the whole region again on one thread. Now the region is split across `REGION_SEGMENTS` files and the scheduler maps it without pre-faulting; secondary tiers still see one contiguous range.",
-     "why_it_matters": "CPU-tier setup on one H100 node: **512 GiB from 167–175 s to 59 s**, **1,250 GiB from 397–460 s to 135–138 s**. A reminder that at TB-scale host KV tiers, OS page-fault behaviour becomes a startup bottleneck.",
-     "read_the_diff": false}
-  ],
-  "contribute": [
-    {"number": 39428, "title": "[torch.compile] E2E correctness testing for fusions",
-     "url": "https://github.com/vllm-project/vllm/issues/39428", "difficulty": "moderate", "fit": 3,
-     "why_you": "You've written the ops these fusions combine (RMSNorm, RoPE, quantized matmul) in `tiny-llm`, so you know what the correct output looks like. The issue asks for a run-a-few-layers-and-compare harness against a baseline vLLM config and HF, which is mostly Python test work.",
-     "first_steps": [
-       "Read `tests/compile/fusions_e2e` to see what's covered today (structural checks, no output comparison).",
-       "Check the open PRs #51934 (QK-norm+RoPE) and #54531 (RMSNorm/SiluMul + FP8 quant) and #43610 so you pick a fusion nobody covers yet.",
-       "Prototype with a small model and `--hf-overrides.num_hidden_layers` set low, comparing fused vs unfused logits.",
-       "Ask on the issue which fusion pass is still uncovered before writing code."
-     ],
-     "status": "Open, no assignee; three open PRs each cover one fusion, so check the remaining ones. Last activity Sep 1."},
-    {"number": 38246, "title": "[Feature]: Better Flashinfer compilation logging",
-     "url": "https://github.com/vllm-project/vllm/issues/38246", "difficulty": "starter", "fit": 2,
-     "why_you": "Small scope: FlashInfer JIT can compile for ~10 minutes with no log output when `flashinfer-jit-cache` isn't installed, so it looks like a hang. A quick way to learn where vLLM calls into FlashInfer's JIT path.",
-     "first_steps": [
-       "Read the linked report #38241 to see where startup appears to hang.",
-       "Repro in a fresh env without `flashinfer-jit-cache` and find where the JIT build is triggered.",
-       "Look at open PR #50762 (adds FlashInfer autotune logging) and check whether it already covers JIT compilation; if not, ask on the issue before starting."
-     ],
-     "status": "Open, no assignee; one related open PR from Aug 2 touches FlashInfer logging. Last activity Sep 1."}
-  ],
-  "followups": [],
-  "news": [
-    {"title": "Jensen Huang resigns as NVIDIA CEO; Colette Kress named interim", "url": "https://www.reuters.com/live/nvidia-live-board-meets-fate-ceo-jensen-huang-after-affair-reports-2026-11-12/",
-     "source": "Reuters", "tag": "market",
-     "summary": "Huang resigned on Nov 12 after reports of affairs with employees, following a board statement and a WSJ report that the board was preparing to oust him. Reports say Arm's Rene Haas was approached in the CEO search. For inference: NVIDIA roadmaps (Rubin, CUDA, Dynamo) are unchanged for now, but leadership turnover is a real variable for hiring and GPU supply."},
-    {"title": "Reports: NVIDIA financed AI startups to absorb GPU supply", "url": "https://www.techpowerup.com/354814/nvidia-allegedly-engineered-scarcity-by-funding-ai-startups-to-buy-its-gpus",
-     "source": "TechPowerUp", "tag": "market",
-     "summary": "Allegations that NVIDIA funded startups that then bought its GPUs, keeping prices high (1,037 HN points). Unverified, but relevant if you track GPU rental prices; separately, a dataset on HN shows the same H100 at **$2.69 vs $12.29/hr** depending on provider."},
-    {"title": "A100 resale prices down 20–30% in weeks", "url": "https://www.reddit.com/r/LocalLLaMA/comments/1xuxbeb/a100_prices_down_2030_since_my_post_about_them/",
-     "source": "r/LocalLLaMA", "tag": "hardware",
-     "summary": "Sellers are cutting prices as Rubin and Blackwell ship. Cheaper Ampere cards make a used A100 a more realistic option for running CUDA/Triton kernel experiments at home."},
-    {"title": "vLLM serves DeepSeek-V4.1-Flash on Vera Rubin NVL72 at 58x GB300 throughput", "url": "https://vllm.ai/blog/2026-11-12-deepseek-v41-flash-vera-rubin",
-     "source": "vLLM blog", "tag": "software",
-     "summary": "1.7M tokens/s per GPU at a P90 of 387 tokens/s per user on SemiAnalysis AgentX, 58x GB300 NVL72 at the same interactivity. Treat it as a vendor benchmark, but it names its workload and latency target."},
-    {"title": "Encoder disaggregation (EPD) in vLLM", "url": "https://vllm.ai/blog/2026-11-11-encoder-disaggregation-epd",
-     "source": "vLLM blog", "tag": "software",
-     "summary": "Multimodal serving split into encode, prefill and decode: metadata-only multimodal requests, dedicated encoder execution, remote embedding transfer and cross-encoder caching. The natural next step after P/D disaggregation."},
-    {"title": "Serving GLM-5.3 at 607.8 tok/s across two DGX Stations with vLLM", "url": "https://developer.nvidia.com/blog/when-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm/",
-     "source": "NVIDIA Technical Blog", "tag": "software",
-     "summary": "A walkthrough of splitting a model that doesn't fit one machine across two desk-side boxes. Useful for seeing the TP/PP choices on a slow interconnect (128 HN points)."},
-    {"title": "Helion picks kernel configs with compile-time heuristics instead of autotuning", "url": "https://pytorch.org/blog/fast-by-default-compile-time-heuristics-for-helion-kernels/",
-     "source": "PyTorch blog", "tag": "open-source",
-     "summary": "Helion now classifies a kernel as matmul, reduction or pointwise from its IR and dataflow and picks fast settings without a slow autotune pass. Worth a look if you're writing Triton by hand."}
-  ],
-  "releases": [
-    {"repo": "ggml-org/llama.cpp", "tag": "v1.0.0", "url": "https://huggingface.co/blog/ggml-org/llama-cpp-v1",
-     "summary": "The local-inference engine reaches 1.0, announced on the HF blog; it sits underneath most Mac/CPU local LLM tooling."}
-  ],
-  "papers": [
-    {"title": "MACaQ: Fast, Model Agnostic Calibrated Quantization for Low-Precision Weights and Activations", "url": "https://arxiv.org/abs/2611.10649",
-     "authors": "Huawei Computing Systems Lab", "claim": "An MXFP4 **W4A4** post-training quantization method that avoids expensive optimization and architecture-specific propagation of basis transforms across layers.",
-     "why_it_matters": "W4A4 is where quantized matmul gets the compute speedup on Blackwell, not just memory savings. Code is public.",
-     "signal": "30 HF upvotes; code release hit 134 HN points", "reproduce": "maybe", "reproduce_note": "PTQ on a small model is feasible on one GPU; real MXFP4 speedups need Blackwell hardware."},
-    {"title": "Decode Token Parallelism: Memory-Efficient Distributed Attention Parallelism for Scalable LLM Decoding", "url": "https://arxiv.org/abs/2611.13293",
-     "authors": "Susav Shrestha, Brad Settlemyer, Narasimha Reddy", "claim": "A parallelism scheme for decode attention aimed at the trade-off where data parallelism replicates weights while KV-cache capacity and attention bandwidth grow with the decode pool.",
-     "why_it_matters": "Directly about the KV-capacity vs. weight-replication tension you'll hit sizing a decode pool; pairs well with this week's DP padding PR.",
-     "signal": "arXiv, this week", "reproduce": "no", "reproduce_note": "Needs a multi-GPU decode cluster."},
-    {"title": "Read Once, Answer Many: Parallel Prompting for Shared-Context LLM Inference", "url": "https://arxiv.org/abs/2611.15130",
-     "authors": "Zekun Zhao, Jeffrey Flanigan", "claim": "Prefix caching removes redundant prefill for many questions about one document, but each decode step still re-reads the document's KV per query; this targets that redundant read.",
-     "why_it_matters": "A memory-bandwidth argument at decode time, exactly the roofline reasoning behind paged attention and prefix sharing in `tiny-vllm`.",
-     "signal": "arXiv, this week", "reproduce": "yes", "reproduce_note": "Shared-prefix decode is easy to prototype in your own engine on a Mac or one GPU."},
-    {"title": "Infrathon: Benchmarking Language Agents for Real-World, Long-Horizon AI Infra Optimization", "url": "https://arxiv.org/abs/2611.11995",
-     "authors": "Zhengyu Hu, Zheyuan Xiao, Yike Wang et al.", "claim": "A benchmark of long-horizon AI-infrastructure optimization tasks; six models evaluated over 150 runs with 24-hour budgets.",
-     "why_it_matters": "Shows which infra-optimization tasks agents can and can't do yet, which is a useful signal for where human inference engineers still add value.",
-     "signal": "51 HF upvotes", "reproduce": "no", "reproduce_note": "24-hour agent runs across many tasks; read for the task list."}
-  ],
-  "videos": [
-    {"title": "Lecture 122: Disaggregated Quantization", "url": "https://www.youtube.com/watch?v=RF6lox0YfSU", "video_id": "RF6lox0YfSU",
-     "channel": "GPU MODE", "kind": "lecture", "why": "The newest GPU MODE lecture, on quantization in a disaggregated serving setup. Fits next to the MACaQ paper."},
-    {"title": "Serving GLM-5.3 Across Two NVIDIA DGX Stations with vLLM", "url": "https://www.youtube.com/watch?v=opRXPRnSkxk", "video_id": "opRXPRnSkxk",
-     "channel": "NVIDIA Developer", "kind": "demo", "why": "Video companion to the NVIDIA blog post on multi-node vLLM over a desk-side setup."},
-    {"title": "NVIDIA Dynamo in 5 Minutes: The Frontend, a Drop-In OpenAI API", "url": "https://www.youtube.com/watch?v=szlo7BL77ms", "video_id": "szlo7BL77ms",
-     "channel": "NVIDIA Developer", "kind": "tutorial", "why": "Short look at the serving layer above the engine: how Dynamo's frontend routes OpenAI-style requests."}
-  ],
-  "jobs": {
-    "summary": "This month's HN hiring thread has few pure inference-engineer roles; most AI posts are agent or application work. The ones that do touch inference treat the model, inference and runtime as one system, and on-device or edge inference keeps showing up.",
-    "skills": [
-      {"name": "GPU systems", "note": "Vivral is hiring Systems (GPU) engineers to run medical models on ordinary computers instead of the cloud."},
-      {"name": "Model + runtime co-design", "note": "Albs Labs says it treats model architecture, inference and runtime as one system."},
-      {"name": "HPC-adjacent ML engineering", "note": "IMC's ML engineers work alongside HPC specialists to get models into live trading."},
-      {"name": "Local / edge inference", "note": "Quantization and CPU/Mac inference (MACaQ, llama.cpp v1.0) are where much of the open-source energy is."}
-    ],
-    "postings": [
-      {"company": "Albs Labs", "role": "Member of Technical Staff (multiple)", "url": "https://news.ycombinator.com/item?id=50340560"},
-      {"company": "Vivral", "role": "ML / Systems (GPU) Engineer (part-time, UF students)", "url": "https://news.ycombinator.com/item?id=50344410"},
-      {"company": "IMC Trading", "role": "Machine Learning Engineer", "url": "https://news.ycombinator.com/item?id=50352150"}
+  {
+   "value": "61",
+   "label": "papers scanned"
+  },
+  {
+   "value": "4",
+   "label": "vLLM blog posts"
+  }
+ ],
+ "building": {
+  "note": "One public commit this week: the site itself, which now has the Rundown tab and the tooling that generates this page.",
+  "repos": [
+   {
+    "name": "brayd-1573.github.io",
+    "url": "https://github.com/brayd-1573/brayd-1573.github.io",
+    "commits": 1,
+    "highlights": [
+     "Add weekly Inference Rundown tab and generation tooling"
     ]
+   }
+  ],
+  "upstream": []
+ },
+ "prs": [
+  {
+   "number": 65896,
+   "title": "[Perf][PP] Copy-engine PP transport, on by default where supported (NVLink only)",
+   "url": "https://github.com/vllm-project/vllm/pull/65896",
+   "area": "distributed",
+   "summary": "Pipeline-parallel activations now move between stages with CUDA copy engines instead of NCCL send/recv, selected by `VLLM_PP_TRANSPORT` (`auto` default, `nccl`, `copy_engine`). The copy is one-sided: the sender sets a flag after writing, the receiver releases it after consuming. The receive is queued lazily on first tensor read (`AsyncIntermediateTensors`) so input prep overlaps the transfer.",
+   "why_it_matters": "Near saturation, median TTFT drops **13–20%** with 1.5–10K new tokens (p99 down 16–19% at the highest loads), with outputs matching NCCL exactly. Copy engines use 0 SMs, so they don't fight persistent kernels sized to the SM count. Caveat from the author: measured only on GB300 at PP=2/4 with one model.",
+   "read_the_diff": false
   },
-  "question": {
-    "prompt": "A 70B dense model with FP8 weights (70 GB) runs on one H200 (141 GB HBM, 4.8 TB/s). It has 80 layers, 8 KV heads (GQA), head dim 128, and an FP8 KV cache. Every request has a 32K-token context. Assuming decode is purely memory-bandwidth bound, estimate per-user tokens/s and total tokens/s at batch 1 and at batch 8. Why isn't batch 8 eight times faster?",
-    "hint": "Per-token KV bytes = 2 (K and V) × layers × KV heads × head dim × bytes per element. Each decode step reads all weights once plus every request's full KV cache.",
-    "answer": "KV per token = 2 × 80 × 8 × 128 × 1 B = 163,840 B (160 KiB). At 32,768 tokens that's 5.37 GB per request.\n\nBatch 1: bytes per step = 70 + 5.37 = 75.4 GB → 75.4e9 / 4.8e12 = 15.7 ms → **~64 tok/s**.\n\nBatch 8: KV = 8 × 5.37 = 42.9 GB, total 112.9 GB (fits in 141 GB) → 23.5 ms per step → **~42.5 tok/s per user, ~340 tok/s total**.\n\nThroughput rises only ~5.3×, not 8×, because weights are read once per step but KV is read per request. At 32K context each request's KV (5.4 GB) is already ~8% of the weights, so by batch 8 the KV reads are ~38% of all traffic. At long context, KV-cache bytes, not weights, become the bandwidth cost, which is why KV quantization, GQA/MLA and prefix sharing matter."
+  {
+   "number": 65972,
+   "title": "[Perf][MoE] Skip DP padding rows in TRT-LLM monolithic MoE with vLLM's top-k",
+   "url": "https://github.com/vllm-project/vllm/pull/65972",
+   "area": "moe",
+   "summary": "Under data parallelism every rank pads its batch to the largest rank's batch. The FlashInfer TRT-LLM monolithic MoE kernels (default on Blackwell for block-FP8/MXFP8) routed padded rows like real tokens. Now the runner routes with vLLM's top-k, which writes expert id -1 for padding, and calls the precomputed-routing op `trtllm_fp8_block_scale_routed_moe`, which skips them.",
+   "why_it_matters": "Padding is a large share of the work: **34–65%** of rows in decode steps with ≤32 rows per rank, and **37–84%** in mixed prefill+decode steps, because every rank pads to the one running prefill. A clear example of how batch shape under DP wastes compute that a single-GPU engine never sees.",
+   "read_the_diff": false
   },
-  "last_answer": null
+  {
+   "number": 66523,
+   "title": "[Bugfix] Extensible KV cache: release warmup's blocks before CUDA graph capture",
+   "url": "https://github.com/vllm-project/vllm/pull/66523",
+   "area": "kv-cache",
+   "summary": "With the extensible KV cache (the MRV2 default), warmup's KV blocks still held memory that large CUDA graphs (e.g. encoder graphs) needed, so startup could OOM. The fix releases those blocks before capture, then `extend_kv_cache` commits the size measured after capture. Graphs captured with only the null block committed stay valid after the cache regrows.",
+   "why_it_matters": "`google/gemma-4-31B-it` with encoder CUDA graphs on 1× H100 went from `OutOfMemoryError` at startup to serving with 772 KV blocks (7.54 GiB) at `max_model_len=4096`. Worth reading if your paged KV cache and CUDA graphs share a memory budget: the ordering of warmup, capture, and KV allocation is the whole bug.",
+   "read_the_diff": true
+  }
+ ],
+ "contribute": [
+  {
+   "number": 39428,
+   "title": "[torch.compile] E2E correctness testing for fusions",
+   "url": "https://github.com/vllm-project/vllm/issues/39428",
+   "difficulty": "moderate",
+   "fit": 3,
+   "why_you": "You've written the ops these fusions combine (RMSNorm, RoPE, quantized matmul) in `tiny-llm`, so you know what the correct output looks like. The issue asks for a run-a-few-layers-and-compare harness against a baseline vLLM config and HF, which is mostly Python test work.",
+   "first_steps": [
+    "Read `tests/compile/fusions_e2e` to see what's covered today (structural checks, no output comparison).",
+    "Check the open PRs #51934 (QK-norm+RoPE) and #54531 (RMSNorm/SiluMul + FP8 quant) and #43610 so you pick a fusion nobody covers yet.",
+    "Prototype with a small model and `--hf-overrides.num_hidden_layers` set low, comparing fused vs unfused logits.",
+    "Ask on the issue which fusion pass is still uncovered before writing code."
+   ],
+   "status": "Open, no assignee; three open PRs each cover one fusion, so check the remaining ones. Last activity Sep 1."
+  },
+  {
+   "number": 38246,
+   "title": "[Feature]: Better Flashinfer compilation logging",
+   "url": "https://github.com/vllm-project/vllm/issues/38246",
+   "difficulty": "starter",
+   "fit": 2,
+   "why_you": "Small scope: FlashInfer JIT can compile for ~10 minutes with no log output when `flashinfer-jit-cache` isn't installed, so it looks like a hang. A quick way to learn where vLLM calls into FlashInfer's JIT path.",
+   "first_steps": [
+    "Read the linked report #38241 to see where startup appears to hang.",
+    "Repro in a fresh env without `flashinfer-jit-cache` and find where the JIT build is triggered.",
+    "Look at open PR #50762 (adds FlashInfer autotune logging) and check whether it already covers JIT compilation; if not, ask on the issue before starting."
+   ],
+   "status": "Open, no assignee; one related open PR from Aug 2 touches FlashInfer logging. Last activity Sep 1."
+  }
+ ],
+ "followups": [],
+ "news": [
+  {
+   "title": "Jensen Huang resigns as NVIDIA CEO; Colette Kress named interim",
+   "url": "https://www.reuters.com/live/nvidia-live-board-meets-fate-ceo-jensen-huang-after-affair-reports-2026-11-12/",
+   "source": "Reuters",
+   "tag": "market",
+   "summary": "Huang resigned on Nov 12 after reports of affairs with employees, following a board statement and a WSJ report that the board was preparing to oust him. Reports say Arm's Rene Haas was approached in the CEO search. For inference: NVIDIA roadmaps (Rubin, CUDA, Dynamo) are unchanged for now, but leadership turnover is a real variable for hiring and GPU supply."
+  },
+  {
+   "title": "Reports: NVIDIA financed AI startups to absorb GPU supply",
+   "url": "https://www.techpowerup.com/354814/nvidia-allegedly-engineered-scarcity-by-funding-ai-startups-to-buy-its-gpus",
+   "source": "TechPowerUp",
+   "tag": "market",
+   "summary": "Allegations that NVIDIA funded startups that then bought its GPUs, keeping prices high (1,037 HN points). Unverified, but relevant if you track GPU rental prices; separately, a dataset on HN shows the same H100 at **$2.69 vs $12.29/hr** depending on provider."
+  },
+  {
+   "title": "A100 resale prices down 20–30% in weeks",
+   "url": "https://www.reddit.com/r/LocalLLaMA/comments/1xuxbeb/a100_prices_down_2030_since_my_post_about_them/",
+   "source": "r/LocalLLaMA",
+   "tag": "hardware",
+   "summary": "Sellers are cutting prices as Rubin and Blackwell ship. Cheaper Ampere cards make a used A100 a more realistic option for running CUDA/Triton kernel experiments at home."
+  },
+  {
+   "title": "vLLM serves DeepSeek-V4.1-Flash on Vera Rubin NVL72 at 58x GB300 throughput",
+   "url": "https://vllm.ai/blog/2026-11-12-deepseek-v41-flash-vera-rubin",
+   "source": "vLLM blog",
+   "tag": "software",
+   "summary": "1.7M tokens/s per GPU at a P90 of 387 tokens/s per user on SemiAnalysis AgentX, 58x GB300 NVL72 at the same interactivity. Treat it as a vendor benchmark, but it names its workload and latency target."
+  },
+  {
+   "title": "Encoder disaggregation (EPD) in vLLM",
+   "url": "https://vllm.ai/blog/2026-11-11-encoder-disaggregation-epd",
+   "source": "vLLM blog",
+   "tag": "software",
+   "summary": "Multimodal serving split into encode, prefill and decode: metadata-only multimodal requests, dedicated encoder execution, remote embedding transfer and cross-encoder caching. The natural next step after P/D disaggregation."
+  },
+  {
+   "title": "Serving GLM-5.3 at 607.8 tok/s across two DGX Stations with vLLM",
+   "url": "https://developer.nvidia.com/blog/when-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm/",
+   "source": "NVIDIA Technical Blog",
+   "tag": "software",
+   "summary": "A walkthrough of splitting a model that doesn't fit one machine across two desk-side boxes. Useful for seeing the TP/PP choices on a slow interconnect (128 HN points)."
+  }
+ ],
+ "releases": [
+  {
+   "repo": "ggml-org/llama.cpp",
+   "tag": "v1.0.0",
+   "url": "https://huggingface.co/blog/ggml-org/llama-cpp-v1",
+   "summary": "The local-inference engine reaches 1.0, announced on the HF blog; it sits underneath most Mac/CPU local LLM tooling."
+  }
+ ],
+ "papers": [
+  {
+   "title": "MACaQ: Fast, Model Agnostic Calibrated Quantization for Low-Precision Weights and Activations",
+   "url": "https://arxiv.org/abs/2611.10649",
+   "authors": "Huawei Computing Systems Lab",
+   "claim": "An MXFP4 **W4A4** post-training quantization method that avoids expensive optimization and architecture-specific propagation of basis transforms across layers.",
+   "why_it_matters": "W4A4 is where quantized matmul gets the compute speedup on Blackwell, not just memory savings. Code is public.",
+   "signal": "30 HF upvotes; code release hit 134 HN points",
+   "reproduce": "maybe",
+   "reproduce_note": "PTQ on a small model is feasible on one GPU; real MXFP4 speedups need Blackwell hardware."
+  },
+  {
+   "title": "Decode Token Parallelism: Memory-Efficient Distributed Attention Parallelism for Scalable LLM Decoding",
+   "url": "https://arxiv.org/abs/2611.13293",
+   "authors": "Susav Shrestha, Brad Settlemyer, Narasimha Reddy",
+   "claim": "A parallelism scheme for decode attention aimed at the trade-off where data parallelism replicates weights while KV-cache capacity and attention bandwidth grow with the decode pool.",
+   "why_it_matters": "Directly about the KV-capacity vs. weight-replication tension you'll hit sizing a decode pool; pairs well with this week's DP padding PR.",
+   "signal": "arXiv, this week",
+   "reproduce": "no",
+   "reproduce_note": "Needs a multi-GPU decode cluster."
+  },
+  {
+   "title": "Read Once, Answer Many: Parallel Prompting for Shared-Context LLM Inference",
+   "url": "https://arxiv.org/abs/2611.15130",
+   "authors": "Zekun Zhao, Jeffrey Flanigan",
+   "claim": "Prefix caching removes redundant prefill for many questions about one document, but each decode step still re-reads the document's KV per query; this targets that redundant read.",
+   "why_it_matters": "A memory-bandwidth argument at decode time, exactly the roofline reasoning behind paged attention and prefix sharing in `tiny-vllm`.",
+   "signal": "arXiv, this week",
+   "reproduce": "yes",
+   "reproduce_note": "Shared-prefix decode is easy to prototype in your own engine on a Mac or one GPU."
+  },
+  {
+   "title": "Infrathon: Benchmarking Language Agents for Real-World, Long-Horizon AI Infra Optimization",
+   "url": "https://arxiv.org/abs/2611.11995",
+   "authors": "Zhengyu Hu, Zheyuan Xiao, Yike Wang et al.",
+   "claim": "A benchmark of long-horizon AI-infrastructure optimization tasks; six models evaluated over 150 runs with 24-hour budgets.",
+   "why_it_matters": "Shows which infra-optimization tasks agents can and can't do yet, which is a useful signal for where human inference engineers still add value.",
+   "signal": "51 HF upvotes",
+   "reproduce": "no",
+   "reproduce_note": "24-hour agent runs across many tasks; read for the task list."
+  }
+ ],
+ "videos": [
+  {
+   "title": "Lecture 122: Disaggregated Quantization",
+   "url": "https://www.youtube.com/watch?v=RF6lox0YfSU",
+   "video_id": "RF6lox0YfSU",
+   "channel": "GPU MODE",
+   "kind": "lecture",
+   "why": "The newest GPU MODE lecture, on quantization in a disaggregated serving setup. Fits next to the MACaQ paper."
+  },
+  {
+   "title": "Serving GLM-5.3 Across Two NVIDIA DGX Stations with vLLM",
+   "url": "https://www.youtube.com/watch?v=opRXPRnSkxk",
+   "video_id": "opRXPRnSkxk",
+   "channel": "NVIDIA Developer",
+   "kind": "demo",
+   "why": "Video companion to the NVIDIA blog post on multi-node vLLM over a desk-side setup."
+  },
+  {
+   "title": "NVIDIA Dynamo in 5 Minutes: The Frontend, a Drop-In OpenAI API",
+   "url": "https://www.youtube.com/watch?v=szlo7BL77ms",
+   "video_id": "szlo7BL77ms",
+   "channel": "NVIDIA Developer",
+   "kind": "tutorial",
+   "why": "Short look at the serving layer above the engine: how Dynamo's frontend routes OpenAI-style requests."
+  }
+ ],
+ "jobs": {
+  "summary": "This month's HN hiring thread has few pure inference-engineer roles; most AI posts are agent or application work. The ones that do touch inference treat the model, inference and runtime as one system, and on-device or edge inference keeps showing up.",
+  "skills": [
+   {
+    "name": "GPU systems",
+    "note": "Vivral is hiring Systems (GPU) engineers to run medical models on ordinary computers instead of the cloud."
+   },
+   {
+    "name": "Model + runtime co-design",
+    "note": "Albs Labs says it treats model architecture, inference and runtime as one system."
+   },
+   {
+    "name": "HPC-adjacent ML engineering",
+    "note": "IMC's ML engineers work alongside HPC specialists to get models into live trading."
+   },
+   {
+    "name": "Local / edge inference",
+    "note": "Quantization and CPU/Mac inference (MACaQ, llama.cpp v1.0) are where much of the open-source energy is."
+   }
+  ],
+  "postings": [
+   {
+    "company": "Albs Labs",
+    "role": "Member of Technical Staff (multiple)",
+    "url": "https://news.ycombinator.com/item?id=50340560"
+   },
+   {
+    "company": "Vivral",
+    "role": "ML / Systems (GPU) Engineer (part-time, UF students)",
+    "url": "https://news.ycombinator.com/item?id=50344410"
+   },
+   {
+    "company": "IMC Trading",
+    "role": "Machine Learning Engineer",
+    "url": "https://news.ycombinator.com/item?id=50352150"
+   }
+  ]
+ },
+ "question": {
+  "prompt": "A 70B dense model with FP8 weights (70 GB) runs on one H200 (141 GB HBM, 4.8 TB/s). It has 80 layers, 8 KV heads (GQA), head dim 128, and an FP8 KV cache. Every request has a 32K-token context. Assuming decode is purely memory-bandwidth bound, estimate per-user tokens/s and total tokens/s at batch 1 and at batch 8. Why isn't batch 8 eight times faster?",
+  "hint": "Per-token KV bytes = 2 (K and V) × layers × KV heads × head dim × bytes per element. Each decode step reads all weights once plus every request's full KV cache.",
+  "answer": "KV per token = 2 × 80 × 8 × 128 × 1 B = 163,840 B (160 KiB). At 32,768 tokens that's 5.37 GB per request.\n\nBatch 1: bytes per step = 70 + 5.37 = 75.4 GB → 75.4e9 / 4.8e12 = 15.7 ms → **~64 tok/s**.\n\nBatch 8: KV = 8 × 5.37 = 42.9 GB, total 112.9 GB (fits in 141 GB) → 23.5 ms per step → **~42.5 tok/s per user, ~340 tok/s total**.\n\nThroughput rises only ~5.3×, not 8×, because weights are read once per step but KV is read per request. At 32K context each request's KV (5.4 GB) is already ~8% of the weights, so by batch 8 the KV reads are ~38% of all traffic. At long context, KV-cache bytes, not weights, become the bandwidth cost, which is why KV quantization, GQA/MLA and prefix sharing matter."
+ },
+ "last_answer": null
 }
