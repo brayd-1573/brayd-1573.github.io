@@ -17,7 +17,7 @@ const d = latest?.data;
 <Base>
   <ScrollRail />
   <!-- ============ HERO ============ -->
-  <section class="hero" id="top" data-rail="00 Intro">
+  <section class="hero" id="top">
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="label" data-decode>{site.role}</p>
@@ -46,7 +46,7 @@ const d = latest?.data;
   </section>
 
   <!-- ============ FOCUS ============ -->
-  <section class="sec" id="focus" data-rail="01 Focus">
+  <section class="sec" id="focus">
     <div class="wrap">
       <SectionHead n="01" label="Focus" title="Inference, end to end." dim="From the kernel up to the scheduler." />
       <div class="focus">
@@ -64,7 +64,7 @@ const d = latest?.data;
   </section>
 
   <!-- ============ WORK ============ -->
-  <section class="sec" id="projects" data-rail="02 Projects">
+  <section class="sec" id="projects">
     <div class="wrap">
       <SectionHead n="02" label="Projects" title="Small engines," dim="built to understand big ones." />
       <div class="projects">
@@ -112,7 +112,7 @@ const d = latest?.data;
   </section>
 
   <!-- ============ BLOG ============ -->
-  <section class="sec" id="blog" data-rail="03 Blog">
+  <section class="sec" id="blog">
     <div class="wrap">
       <SectionHead n="03" label="Blog" title="Technical blog." dim="Deep dives on GPUs, kernels and LLM serving." />
       <PostList posts={posts} />
@@ -123,9 +123,9 @@ const d = latest?.data;
   <!-- ============ RUNDOWN ============ -->
   {
     d && latest && (
-      <section class="sec" id="rundown" data-rail="04 Digest">
+      <section class="sec" id="rundown">
         <div class="wrap">
-          <SectionHead n="04" label={site.rundown} title="What moved this week." dim="Every Sunday." />
+          <SectionHead n="04" label={site.rundown} title="The week in LLM inference, in one page." dim="An automated Sunday digest of vLLM, papers, hardware and jobs." />
           <a class="rd-promo" href={`/rundown/${latest.id}/`} data-reveal>
             <div class="rd-promo-top">
               <span class="chip on live">
@@ -156,7 +156,7 @@ const d = latest?.data;
   }
 
   <!-- ============ CONTACT ============ -->
-  <section class="sec contact" id="contact" data-rail="05 Contact">
+  <section class="sec contact" id="contact">
     <div class="wrap">
       <p class="label" data-decode>[05] Contact</p>
       <h2 class="contact-title" data-reveal>

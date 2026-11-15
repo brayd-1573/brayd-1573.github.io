@@ -8,6 +8,7 @@ import { getIssues } from '../../lib/data';
 import { inline, block, pad, plain, ymd } from '../../lib/md';
 import '../../styles/rundown.css';
 import { site } from '../../data/profile';
+import ScrollRail from '../../components/ScrollRail.astro';
 
 export async function getStaticPaths() {
   const issues = await getIssues();
@@ -38,6 +39,7 @@ const fmtFit = (n: number) => `Fit ${n} of 5`;
 ---
 
 <Base title={`${site.rundown} #${d.issue}`} description={plain(d.headline)} type="article" published={new Date(`${entry.id}T12:00:00Z`)}>
+  <ScrollRail />
   <div class="rd">
     <!-- masthead -->
     <header class="rd-mast">
@@ -109,7 +111,9 @@ const fmtFit = (n: number) => `Fit ${n} of 5`;
                     {r.highlights.length > 0 && (
                       <ul class="steps">
                         {r.highlights.map((h) => (
-                          <li set:html={inline(h)} />
+                          <li>
+                            <span set:html={inline(h)} />
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -194,7 +198,9 @@ const fmtFit = (n: number) => `Fit ${n} of 5`;
                   <p class="label" style="margin-top:20px">First steps</p>
                   <ol class="steps">
                     {c.first_steps.map((s) => (
-                      <li set:html={inline(s)} />
+                      <li>
+                        <span set:html={inline(s)} />
+                      </li>
                     ))}
                   </ol>
                   <div class="rd-meta end">
