@@ -90,7 +90,12 @@ jobs:
         id: detect
         env:
           BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
         run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then  # manual run = re-send notification for the latest issue
+            echo "file=$(ls _data/digests/*.json | sort | tail -1)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             BEFORE="HEAD~1"
           fi
