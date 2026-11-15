@@ -22,6 +22,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -54,18 +55,30 @@ ERRORS = []
 
 
 # ---------------------------------------------------------------- helpers
+_GH_TOKEN_OK = True  # flipped off if the ambient token is scoped too narrowly (e.g. cloud sessions)
+
+
 def fetch(url, accept=None, gh=False, timeout=30):
+    global _GH_TOKEN_OK
     headers = {"User-Agent": UA}
     if accept:
         headers["Accept"] = accept
+    tok = None
     if gh:
         headers["Accept"] = "application/vnd.github+json"
-        tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        tok = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")) if _GH_TOKEN_OK else None
         if tok:
             headers["Authorization"] = f"Bearer {tok}"
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", "replace")
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as r:
+            return r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        if tok and e.code in (401, 403):  # token not valid for this repo: retry anonymously from now on
+            _GH_TOKEN_OK = False
+            headers.pop("Authorization", None)
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as r:
+                return r.read().decode("utf-8", "replace")
+        raise
 
 
 def gh_json(path, **params):
