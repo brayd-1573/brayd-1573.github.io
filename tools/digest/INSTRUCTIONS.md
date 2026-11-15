@@ -22,6 +22,8 @@ what to contribute, what the job market rewards.
 
 1. `python3 tools/digest/finalize.py --last` gives you the next issue number, last week's
    contribution picks and question, and recently used URLs (don't repeat those items).
+   **If `days_since_previous` is less than 5, stop: don't publish.** Reply "Skipped: issue N was
+   published D days ago." (This guards against manual reruns and duplicate issues.)
 2. `python3 tools/digest/gather.py --out /tmp/rundown.json` takes about a minute. Then read `/tmp/rundown.json`.
    If last week had picks: `python3 tools/digest/gather.py --followup <n1,n2,...>`.
    If `errors` lists a failed source, fill that gap with at most one web search.

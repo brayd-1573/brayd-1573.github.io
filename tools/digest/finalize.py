@@ -54,6 +54,7 @@ def last():
     d = json.load(open(files[-1]))
     print(json.dumps({
         "previous_issue": d.get("issue"), "previous_date": d.get("date"), "next_issue_number": d.get("issue", 0) + 1,
+        "days_since_previous": (datetime.now(timezone.utc).date() - datetime.strptime(d["date"], "%Y-%m-%d").date()).days,
         "previous_contribute_numbers": [c.get("number") for c in d.get("contribute", [])],
         "previous_question": d.get("question"),
         "recent_urls": sorted({i.get("url") for k in ("prs", "news", "papers", "videos")
