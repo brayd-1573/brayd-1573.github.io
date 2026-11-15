@@ -1,0 +1,106 @@
+---
+import Page from '../layouts/Page.astro';
+import { site } from '../data/profile';
+
+const now = [
+  ['Building', 'tiny-llm: an LLM serving stack on MLX, from matmul to continuous batching and paged attention.'],
+  ['Studying', 'Computer Architecture, Algorithms, ML, and Systems for AI at Vanderbilt.'],
+  ['Research', 'Independent study on LLM inference and serving with Prof. Aniruddha Gokhale.'],
+  ['Reading', 'vLLM internals, every week, through the Inference Rundown.'],
+];
+---
+
+<Page
+  title="About"
+  label="About"
+  heading="I like knowing how things work under the hood."
+  lede="Math and computer science at Vanderbilt University, working toward a career in ML systems and LLM inference."
+>
+  <div class="wrap about">
+    <div class="prose">
+      <p>
+        I'm Brayden. I study mathematics and computer science at Vanderbilt, and I'm most interested in the place where
+        machine learning meets high-performance computing. Most people are captivated by what models can do. I'm just as
+        interested in <em>how</em> they run: the kernels, the memory traffic, the batching and the scheduling that turn a
+        file of weights into a fast, reliable service.
+      </p>
+      <p>
+        I came to this the long way. I spent a year deep in graduate-level math (analysis, topology, measure theory and
+        stochastic processes) on a path toward quantitative finance. That foundation stuck, but the path didn't: what I
+        actually enjoy is building things and understanding how they work. So I pivoted to ML systems, and I'm working
+        through the stack from the bottom up: deep learning frameworks, ML compilers, computer architecture, and LLM
+        serving.
+      </p>
+      <p>
+        I learn in public. This site holds my <a href="/posts/">writing</a>, the <a href="/#work">projects</a> I'm
+        building, and the <a href="/rundown/">Inference Rundown</a>, a weekly briefing I generate to stay current on
+        LLM inference and find places to contribute upstream.
+      </p>
+      <h2>What I'm looking for</h2>
+      <p>
+        Internships in ML systems, GPU performance and LLM inference, especially teams working on serving engines,
+        kernels or inference infrastructure. If that's you, I'd love to <a href={`mailto:${site.email}`}>hear from you</a>.
+      </p>
+    </div>
+
+    <aside class="now">
+      <p class="label"><span class="acc">●</span> Now · Fall 2026</p>
+      <dl>
+        {
+          now.map(([k, v]) => (
+            <div>
+              <dt class="label">{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div class="links">
+        <a class="btn primary" href={`mailto:${site.email}`}>Email me</a>
+        <a class="btn" href={site.github}>GitHub ↗</a>
+        <a class="btn" href={site.linkedin}>LinkedIn ↗</a>
+      </div>
+    </aside>
+  </div>
+</Page>
+
+<style>
+  .about {
+    display: grid;
+    gap: 56px;
+    padding-block: 56px 112px;
+  }
+  @media (min-width: 1000px) {
+    .about {
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 80px;
+    }
+    .now {
+      position: sticky;
+      top: 96px;
+      align-self: start;
+    }
+  }
+  .now {
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    padding: 24px;
+  }
+  .now dl {
+    margin: 8px 0 0;
+  }
+  .now dl > div {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .now dd {
+    margin: 6px 0 0;
+    font-size: 15.5px;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+</style>

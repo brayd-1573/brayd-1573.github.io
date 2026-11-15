@@ -1,0 +1,84 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { fmtDate } from '../lib/md';
+import { excerpt, readingTime } from '../lib/data';
+
+interface Props {
+  posts: CollectionEntry<'posts'>[];
+}
+const { posts } = Astro.props;
+---
+
+<ol class="posts">
+  {
+    posts.map((p) => (
+      <li data-reveal>
+        <a href={`/posts/${p.id}/`}>
+          <time class="label" datetime={p.data.date.toISOString()}>
+            {fmtDate(p.data.date)}
+          </time>
+          <div>
+            <h3>{p.data.title}</h3>
+            <p>{p.data.description ?? excerpt(p.body)}</p>
+          </div>
+          <span class="label rt">
+            {readingTime(p.body)} min <span class="arr">→</span>
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .posts a {
+    display: grid;
+    gap: 10px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+    transition: background-color 200ms ease;
+  }
+  @media (min-width: 800px) {
+    .posts a {
+      grid-template-columns: 3fr 7fr 2fr;
+      gap: 32px;
+      align-items: baseline;
+    }
+  }
+  .posts h3 {
+    font-size: clamp(21px, 2.2vw, 26px);
+    letter-spacing: -0.02em;
+    transition: color 160ms ease;
+  }
+  .posts p {
+    margin-top: 8px;
+    color: var(--fg-muted);
+    font-size: 15.5px;
+    max-width: 62ch;
+  }
+  .posts a:hover h3 {
+    color: var(--accent);
+  }
+  .rt {
+    white-space: nowrap;
+  }
+  @media (min-width: 800px) {
+    .rt {
+      text-align: right;
+    }
+  }
+  .rt .arr {
+    display: inline-block;
+    color: var(--accent);
+    transition: transform 200ms var(--ease-out);
+  }
+  .posts a:hover .arr {
+    transform: translateX(4px);
+  }
+</style>

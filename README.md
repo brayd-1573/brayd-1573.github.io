@@ -1,66 +1,35 @@
-# Brayden Cox - ML Systems Engineering Blog
+# brayd-1573.github.io
 
-Personal technical blog documenting my journey from Vanderbilt Math & CS student to ML systems engineer.
+Personal site of Brayden Cox: ML systems & LLM inference. Built with [Astro](https://astro.build),
+deployed to GitHub Pages by `.github/workflows/pages-deploy.yml` on every push to `main`.
 
-🌐 **Live Site**: [https://brayd-1573.github.io](https://brayd-1573.github.io)
+## Develop
 
-## About
-
-This blog chronicles my path toward becoming an ML systems engineer, focusing on:
-- GPU optimization and CUDA programming
-- Machine learning infrastructure and systems
-- High-performance computing
-- Open source contributions
-- Technical learning and career development
-
-## Tech Stack
-
-Built with [Jekyll](https://jekyllrb.com/) using the [Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy/) theme.
-
-## Local Development
-
-### Prerequisites
-- Ruby 3.x
-- Jekyll
-- Bundler
-
-### Setup
+Requires Node 22 (see `.nvmrc`).
 
 ```bash
-# Install dependencies
-bundle install
-
-# Run local server
-bundle exec jekyll serve
-
-# View at http://localhost:4000
+npm install
+npm run dev       # http://localhost:4321
+npm run verify    # production build + internal link check (what CI runs)
 ```
 
-### Creating New Posts
+## Where things live
 
-Create a new file in `_posts/` with the format: `YYYY-MM-DD-title.md`
+| What | Where |
+| --- | --- |
+| Bio, links, focus areas, projects | `src/data/profile.ts` |
+| Blog posts (Markdown, `YYYY-MM-DD-slug.md` → `/posts/slug/`) | `src/content/posts/` |
+| Design tokens (colors, type, dark/light) | `src/styles/global.css` |
+| Inference Rundown data (one JSON per issue) | `_data/digests/<YYYY-MM-DD>.json` |
+| Rundown pages (`/rundown/`, `/rundown/<date>/`) | `src/pages/rundown/`, `src/styles/rundown.css` |
+| Rundown schema (build-time validation) | `src/content.config.ts` (mirrors `tools/digest/finalize.py`) |
 
-```markdown
----
-title: "Your Post Title"
-date: YYYY-MM-DD HH:MM:SS -0500
-categories: [Category1, Category2]
-tags: [tag1, tag2, tag3]
----
+## Inference Rundown
 
-Your content here...
-```
+A weekly Claude Code routine follows `tools/digest/INSTRUCTIONS.md`: it runs `tools/digest/gather.py`,
+writes `_data/digests/<date>.json`, validates it with `tools/digest/finalize.py`, and pushes to `main`.
+The deploy workflow builds the page, then the `notify-rundown` job opens a GitHub issue linking to
+`https://brayd-1573.github.io/rundown/<date>/`. Actions → *Build and Deploy* → *Run workflow*
+redeploys and re-sends the notification for the latest issue.
 
-## Deployment
-
-The site automatically deploys to GitHub Pages via GitHub Actions when changes are pushed to the `main` branch.
-
-## Contact
-
-- **Email**: brayden.r.cox@vanderbilt.edu
-- **GitHub**: [@brayd-1573](https://github.com/brayd-1573)
-- **LinkedIn**: [braydencox](https://linkedin.com/in/braydencox)
-
-## License
-
-This work is published under [MIT](LICENSE) License.
+Post ideas: `CONTENT_IDEAS.md`.

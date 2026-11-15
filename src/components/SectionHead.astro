@@ -1,0 +1,15 @@
+---
+interface Props {
+  n: string;
+  label: string;
+  title: string;
+  dim?: string;
+  id?: string;
+}
+const { n, label, title, dim, id } = Astro.props;
+---
+
+<div class="sec-head" id={id}>
+  <div class="label" data-decode>[{n}] {label}</div>
+  <h2 class="sec-title" data-reveal>{title}{dim && <span class="dim"> {dim}</span>}</h2>
+</div>

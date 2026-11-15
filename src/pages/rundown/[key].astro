@@ -1,0 +1,437 @@
+---
+// One weekly issue. All content lives in _data/digests/<key>.json (written by the weekly Claude
+// routine, see tools/digest/INSTRUCTIONS.md); this page only renders it. Optional sections hide
+// when empty/null.
+import Base from '../../layouts/Base.astro';
+import RundownNote from '../../components/RundownNote.astro';
+import { getIssues } from '../../lib/data';
+import { inline, block, pad, plain, ymd } from '../../lib/md';
+import '../../styles/rundown.css';
+
+export async function getStaticPaths() {
+  const issues = await getIssues();
+  return issues.map((entry, i) => ({
+    params: { key: entry.id },
+    props: { entry, newer: issues[i - 1], older: issues[i + 1] },
+  }));
+}
+
+const { entry, newer, older } = Astro.props;
+const d = entry.data;
+
+const hasBuilding = !!d.building && d.building.repos.length > 0;
+const sections = [
+  hasBuilding && { id: 'building', title: 'What I built', sub: 'My public commits this week.' },
+  { id: 'prs', title: 'Merged in vLLM', sub: 'The PRs worth reading.' },
+  { id: 'contribute', title: 'Contribution picks', sub: 'Open vLLM issues that fit what I’ve built.' },
+  { id: 'news', title: 'Industry', sub: 'Hardware, software, market.' },
+  d.releases.length > 0 && { id: 'releases', title: 'Releases', sub: 'What matters for inference.' },
+  d.papers.length > 0 && { id: 'papers', title: 'Research', sub: 'Papers people are talking about.' },
+  d.videos.length > 0 && { id: 'videos', title: 'Watch', sub: 'Talks, lectures, breakdowns.' },
+  d.jobs && { id: 'jobs', title: 'Job market', sub: 'What inference roles ask for.' },
+  { id: 'question', title: 'Question of the week', sub: 'Back-of-envelope. Answer next issue.' },
+].filter(Boolean) as { id: string; title: string; sub: string }[];
+const num = Object.fromEntries(sections.map((s, i) => [s.id, pad(i + 1)]));
+const head = Object.fromEntries(sections.map((s) => [s.id, s]));
+const fmtFit = (n: number) => `Fit ${n} of 5`;
+---
+
+<Base title={`Inference Rundown #${d.issue}`} description={plain(d.headline)} type="article" published={new Date(`${entry.id}T12:00:00Z`)}>
+  <div class="rd">
+    <!-- masthead -->
+    <header class="rd-mast">
+      <div class="wrap">
+        <div class="rd-mast-row">
+          <a class="label" href="/rundown/">← Inference Rundown</a>
+          <span class="label">{ymd(d.window.from)} – {ymd(d.window.to, true)}</span>
+        </div>
+        <div class="rd-issue-no">
+          <span class="big" data-decode>ISSUE {pad(d.issue, 3)}</span>
+        </div>
+        <h1 class="rd-headline" data-reveal>{d.headline}</h1>
+        <RundownNote />
+      </div>
+    </header>
+
+    <div class="wrap">
+      <!-- tl;dr + stats -->
+      <div class="rd-top">
+        <div class="rd-tldr">
+          <p class="label"><span class="acc">TL;DR</span> · If you read one thing</p>
+          <div class="md" set:html={block(d.tldr)} />
+        </div>
+        <div class="rd-stats">
+          {
+            d.stats.map((s) => (
+              <div class="rd-stat">
+                <span class="v">{s.value}</span>
+                <span class="label">{s.label}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <nav class="rd-toc" aria-label="Sections in this issue">
+        {
+          sections.map((s) => (
+            <a href={`#${s.id}`}>
+              <span>{num[s.id]}</span>
+              {s.title}
+            </a>
+          ))
+        }
+      </nav>
+
+      <!-- building -->
+      {
+        hasBuilding && d.building && (
+          <section class="rd-sec" id="building">
+            <header>
+              <p class="label">[{num.building}]</p>
+              <h2>{head.building.title}</h2>
+              <p>{head.building.sub}</p>
+            </header>
+            <div class="rd-body">
+              {d.building.note && <div class="md" set:html={block(d.building.note)} />}
+              <div class="rd-grid">
+                {d.building.repos.map((r) => (
+                  <div class="rd-card">
+                    <div class="rd-meta">
+                      <span class="chip on">
+                        +{r.commits} commit{r.commits === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <h3>
+                      <a href={r.url}>{r.name}</a>
+                    </h3>
+                    {r.highlights.length > 0 && (
+                      <ul class="steps">
+                        {r.highlights.map((h) => (
+                          <li set:html={inline(h)} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {d.building.upstream.length > 0 && (
+                <div class="rd-sub">
+                  <p class="label">Upstream PRs</p>
+                  <ul>
+                    {d.building.upstream.map((p) => (
+                      <li>
+                        <a href={p.url}>{p.title}</a>
+                        <span class="chip">{p.state}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- prs -->
+      <section class="rd-sec" id="prs">
+        <header>
+          <p class="label">[{num.prs}]</p>
+          <h2>{head.prs.title}</h2>
+          <p>{head.prs.sub}</p>
+        </header>
+        <div class="rd-body">
+          <ol class="rd-rows">
+            {
+              d.prs.map((p) => (
+                <li>
+                  <span class="rd-num">#{p.number}</span>
+                  <div>
+                    <h3>
+                      <a href={p.url}>{p.title}</a>
+                      {p.read_the_diff && <span class="chip on rd-diff">Read the diff</span>}
+                    </h3>
+                    <div class="md" set:html={block(p.summary)} />
+                    <div class="rd-why">
+                      <span class="chip">{p.area}</span>
+                      <div class="md" set:html={inline(p.why_it_matters)} />
+                    </div>
+                  </div>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </section>
+
+      <!-- contribute -->
+      <section class="rd-sec" id="contribute">
+        <header>
+          <p class="label">[{num.contribute}]</p>
+          <h2>{head.contribute.title}</h2>
+          <p>{head.contribute.sub}</p>
+        </header>
+        <div class="rd-body">
+          <div class={`rd-grid ${d.contribute.length === 3 ? 'three' : ''}`}>
+            {
+              d.contribute.map((c) => (
+                <div class="rd-card">
+                  <div class="rd-meta">
+                    <span class={`chip b-${c.difficulty}`}>{c.difficulty}</span>
+                    <span class="fit" role="img" aria-label={fmtFit(c.fit)} title={fmtFit(c.fit)}>
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <i class={i <= c.fit ? 'on' : ''} />
+                      ))}
+                    </span>
+                    <span>fit {c.fit}/5</span>
+                    <span>#{c.number}</span>
+                  </div>
+                  <h3>
+                    <a href={c.url}>{c.title}</a>
+                  </h3>
+                  <div class="md" set:html={block(c.why_you)} />
+                  <p class="label" style="margin-top:20px">First steps</p>
+                  <ol class="steps">
+                    {c.first_steps.map((s) => (
+                      <li set:html={inline(s)} />
+                    ))}
+                  </ol>
+                  <div class="rd-meta end">
+                    <span class="rd-status">{c.status}</span>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+          {
+            d.followups.length > 0 && (
+              <div class="rd-sub">
+                <p class="label">Last week’s picks</p>
+                <ul>
+                  {d.followups.map((f) => (
+                    <li>
+                      <a href={f.url}>{f.title}</a>
+                      <span class="label">{f.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+        </div>
+      </section>
+
+      <!-- news -->
+      <section class="rd-sec" id="news">
+        <header>
+          <p class="label">[{num.news}]</p>
+          <h2>{head.news.title}</h2>
+          <p>{head.news.sub}</p>
+        </header>
+        <div class="rd-body">
+          <div class="rd-grid">
+            {
+              d.news.map((n) => (
+                <div class="rd-card">
+                  <div class="rd-meta">
+                    <span class={`chip t-${n.tag}`}>{n.tag}</span>
+                    <span>{n.source}</span>
+                  </div>
+                  <h3>
+                    <a href={n.url}>{n.title}</a>
+                  </h3>
+                  <div class="md" set:html={block(n.summary)} />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- releases -->
+      {
+        d.releases.length > 0 && (
+          <section class="rd-sec" id="releases">
+            <header>
+              <p class="label">[{num.releases}]</p>
+              <h2>{head.releases.title}</h2>
+              <p>{head.releases.sub}</p>
+            </header>
+            <div class="rd-body">
+              {d.releases.map((r) => (
+                <div class="rd-rel">
+                  <a href={r.url}>
+                    {r.repo} <span class="acc">{r.tag}</span>
+                  </a>
+                  <div class="md" set:html={inline(r.summary)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- papers -->
+      {
+        d.papers.length > 0 && (
+          <section class="rd-sec" id="papers">
+            <header>
+              <p class="label">[{num.papers}]</p>
+              <h2>{head.papers.title}</h2>
+              <p>{head.papers.sub}</p>
+            </header>
+            <div class="rd-body">
+              <div class="rd-grid">
+                {d.papers.map((p) => (
+                  <div class="rd-card">
+                    <div class="rd-meta">
+                      <span class={`chip b-${p.reproduce}`}>reproduce: {p.reproduce}</span>
+                      <span>{p.signal}</span>
+                    </div>
+                    <h3>
+                      <a href={p.url}>{p.title}</a>
+                    </h3>
+                    <p class="rd-authors">{p.authors}</p>
+                    <div class="rd-claim md" set:html={inline(p.claim)} />
+                    <div class="md" set:html={block(p.why_it_matters)} />
+                    {p.reproduce_note && <p class="rd-note-i">{p.reproduce_note}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      <!-- videos -->
+      {
+        d.videos.length > 0 && (
+          <section class="rd-sec" id="videos">
+            <header>
+              <p class="label">[{num.videos}]</p>
+              <h2>{head.videos.title}</h2>
+              <p>{head.videos.sub}</p>
+            </header>
+            <div class="rd-body">
+              <div class="rd-grid">
+                {d.videos.map((v) => (
+                  <div class="rd-card rd-video">
+                    <a class="rd-thumb" href={v.url} tabindex="-1" aria-hidden="true">
+                      <img
+                        src={`https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        width="320"
+                        height="180"
+                      />
+                      <span class="play">
+                        <svg width="12" height="12" viewBox="0 0 12 12">
+                          <path d="M2 1l9 5-9 5z" fill="currentColor" />
+                        </svg>
+                      </span>
+                      {v.length && <span class="len">{v.length}</span>}
+                    </a>
+                    <div class="rd-v-body">
+                      <div class="rd-meta">
+                        <span class="chip">{v.kind}</span>
+                        <span>{v.channel}</span>
+                      </div>
+                      <h3>
+                        <a href={v.url}>{v.title}</a>
+                      </h3>
+                      <div class="md" set:html={block(v.why)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      <!-- jobs -->
+      {
+        d.jobs && (
+          <section class="rd-sec" id="jobs">
+            <header>
+              <p class="label">[{num.jobs}]</p>
+              <h2>{head.jobs.title}</h2>
+              <p>{head.jobs.sub}</p>
+            </header>
+            <div class="rd-body">
+              <div class="md" set:html={block(d.jobs.summary)} />
+              {d.jobs.skills.length > 0 && (
+                <div class="rd-skills">
+                  {d.jobs.skills.map((s) => (
+                    <div class="rd-skill">
+                      <strong>{s.name}</strong>
+                      {s.note && <span set:html={inline(s.note)} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {d.jobs.postings.length > 0 && (
+                <div class="rd-sub">
+                  <p class="label">Postings</p>
+                  <ul>
+                    {d.jobs.postings.map((j) => (
+                      <li>
+                        <a href={j.url}>{j.company}</a>
+                        <span style="color:var(--fg-muted)">{j.role}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- question -->
+      <section class="rd-sec" id="question">
+        <header>
+          <p class="label">[{num.question}]</p>
+          <h2>{head.question.title}</h2>
+          <p>{head.question.sub}</p>
+        </header>
+        <div class="rd-body">
+          <div class="rd-q this">
+            <p class="label"><span class="acc">●</span> This week</p>
+            <div class="prompt md" set:html={block(d.question.prompt)} />
+            {
+              d.question.hint && (
+                <details>
+                  <summary>Hint</summary>
+                  <div class="answer" set:html={block(d.question.hint)} />
+                </details>
+              )
+            }
+          </div>
+          {
+            d.last_answer && (
+              <div class="rd-q">
+                <p class="label">Last week’s answer</p>
+                <div class="prompt md" set:html={block(d.last_answer.prompt)} />
+                <details>
+                  <summary>Show the worked answer</summary>
+                  <div class="answer" set:html={block(d.last_answer.answer)} />
+                </details>
+              </div>
+            )
+          }
+        </div>
+      </section>
+
+      <footer class="rd-foot">
+        <span class="label">Sources: GitHub · arXiv · HF Papers · Hacker News · vendor blogs · YouTube</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          {older && <a class="btn" href={`/rundown/${older.id}/`}>← #{older.data.issue}</a>}
+          <a class="btn" href="/rundown/">All issues</a>
+          {newer && <a class="btn" href={`/rundown/${newer.id}/`}>#{newer.data.issue} →</a>}
+        </div>
+      </footer>
+    </div>
+  </div>
+</Base>

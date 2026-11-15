@@ -1,0 +1,48 @@
+---
+import Base from './Base.astro';
+interface Props {
+  title: string;
+  label: string;
+  heading?: string;
+  lede?: string;
+  description?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+}
+const { title, label, heading = title, lede, description, type, published } = Astro.props;
+---
+
+<Base title={title} description={description ?? lede} type={type} published={published}>
+  <header class="page-head">
+    <div class="wrap">
+      <p class="label" data-decode>{label}</p>
+      <h1 class="page-title" data-reveal>{heading}</h1>
+      {lede && <p class="page-lede" data-reveal style="--d:120ms">{lede}</p>}
+      <slot name="meta" />
+    </div>
+  </header>
+  <slot />
+</Base>
+
+<style>
+  .page-head {
+    padding: clamp(56px, 9vw, 112px) 0 clamp(40px, 6vw, 64px);
+    border-bottom: 1px solid var(--line);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -12px -12px;
+  }
+  .page-title {
+    margin-top: 20px;
+    font-size: clamp(38px, 6vw, 76px);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    max-width: 20ch;
+  }
+  .page-lede {
+    margin-top: 22px;
+    max-width: 60ch;
+    font-size: 19px;
+    color: var(--fg-muted);
+  }
+</style>

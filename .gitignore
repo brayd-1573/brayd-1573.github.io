@@ -1,27 +1,22 @@
-# Bundler cache
-.bundle
-vendor
+# Astro
+dist/
+.astro/
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# Old Jekyll leftovers (local only)
+vendor/
 Gemfile.lock
+.bundle/
+.jekyll-cache/
+_site/
 
-# Jekyll cache
-.jekyll-cache
-.jekyll-metadata
-_site
-
-# RubyGems
-*.gem
-
-# NPM dependencies
-node_modules
-package-lock.json
-
-# IDE configurations
+# OS / IDE
+.DS_Store
 .idea
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
-!.vscode/tasks.json
-
-# Misc
-_sass/vendors
-assets/js/dist

@@ -1,0 +1,144 @@
+---
+import { render } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+import { getPosts, excerpt, readingTime } from '../../lib/data';
+import { fmtDate } from '../../lib/md';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: { post, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}
+
+const { post, newer, older } = Astro.props;
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth === 2);
+const desc = post.data.description ?? excerpt(post.body, 160);
+---
+
+<Page title={post.data.title} label="Writing" type="article" published={post.data.date} description={desc}>
+  <div slot="meta" class="meta label" data-reveal style="--d:200ms">
+    <time datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+    <span>{readingTime(post.body)} min read</span>
+    {post.data.tags.map((t) => <span class="tag">#{t}</span>)}
+  </div>
+
+  <div class="wrap layout">
+    <article class="prose">
+      <Content />
+    </article>
+    {
+      toc.length > 2 && (
+        <aside class="toc" aria-label="On this page">
+          <p class="label">On this page</p>
+          <ol>
+            {toc.map((h) => (
+              <li>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </aside>
+      )
+    }
+  </div>
+
+  <nav class="wrap pager" aria-label="More posts">
+    {
+      older ? (
+        <a href={`/posts/${older.id}/`}>
+          <span class="label">← Older</span>
+          <span>{older.data.title}</span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+    {
+      newer && (
+        <a class="r" href={`/posts/${newer.id}/`}>
+          <span class="label">Newer →</span>
+          <span>{newer.data.title}</span>
+        </a>
+      )
+    }
+  </nav>
+</Page>
+
+<style>
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 28px;
+  }
+  .tag {
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  .layout {
+    display: grid;
+    gap: 48px;
+    padding-block: 56px 80px;
+  }
+  @media (min-width: 1100px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 80px;
+    }
+    .toc {
+      position: sticky;
+      top: 96px;
+      align-self: start;
+    }
+  }
+  @media (max-width: 1099px) {
+    .toc {
+      display: none;
+    }
+  }
+  .toc ol {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    border-left: 1px solid var(--line);
+  }
+  .toc a {
+    display: block;
+    padding: 6px 0 6px 14px;
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    transition:
+      color 160ms ease,
+      border-color 160ms ease;
+  }
+  .toc a:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding-block: 32px 96px;
+    border-top: 1px solid var(--line);
+  }
+  .pager a {
+    display: grid;
+    gap: 8px;
+    padding: 20px 0;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .pager a:hover > span:last-child {
+    color: var(--accent);
+  }
+  .pager .r {
+    text-align: right;
+  }
+</style>

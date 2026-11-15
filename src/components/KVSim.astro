@@ -1,0 +1,231 @@
+---
+// Hero visual: a small paged-KV-cache simulation. Requests arrive, prefill, decode token by
+// token, allocate fixed-size blocks from a shared pool, and free them when they finish. It is a
+// toy (clearly labelled), but every number it shows is computed by the simulation itself.
+const COLS = 16;
+const ROWS = 8;
+---
+
+<figure class="kv" aria-label="Animated diagram: a paged KV cache allocating and freeing blocks as requests decode">
+  <div class="kv-top label">
+    <span><span class="acc">fig.0</span> paged kv cache · block=16 tok</span>
+    <span class="kv-tag">sim</span>
+  </div>
+  <div class="kv-grid" style={`--cols:${COLS}`} data-cols={COLS} data-rows={ROWS}>
+    {Array.from({ length: COLS * ROWS }, () => <i></i>)}
+  </div>
+  <div class="kv-reqs" aria-hidden="true"></div>
+  <dl class="kv-stats label">
+    <div><dt>blocks</dt><dd data-k="used">0/128</dd></div>
+    <div><dt>running</dt><dd data-k="run">0</dd></div>
+    <div><dt>step</dt><dd data-k="step">0</dd></div>
+    <div><dt>tokens</dt><dd data-k="tok">0</dd></div>
+  </dl>
+</figure>
+
+<style>
+  .kv {
+    margin: 0;
+    border: 1px solid var(--line);
+    background: linear-gradient(var(--bg-elev), var(--bg-elev)) padding-box;
+    padding: 16px;
+    border-radius: var(--radius);
+  }
+  .kv-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+  .kv-tag {
+    padding: 0 6px;
+    border: 1px solid var(--line-strong);
+    color: var(--fg-dim);
+  }
+  .kv-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: 3px;
+  }
+  .kv-grid i {
+    aspect-ratio: 1;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    transition:
+      background-color 260ms ease,
+      border-color 260ms ease,
+      opacity 260ms ease;
+  }
+  .kv-grid i.on {
+    background: var(--c, var(--accent));
+    border-color: var(--c, var(--accent));
+  }
+  .kv-grid i.fill {
+    opacity: 0.45;
+  }
+  .kv-reqs {
+    display: grid;
+    gap: 4px;
+    margin-top: 14px;
+    min-height: 92px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .kv-reqs > :global(div) {
+    display: grid;
+    grid-template-columns: 56px 1fr 92px;
+    white-space: nowrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .kv-reqs :global(.bar) {
+    height: 4px;
+    background: var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .kv-reqs :global(.bar b) {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--c);
+    transition: width 200ms linear;
+  }
+  .kv-reqs :global(.ph) {
+    text-align: right;
+    color: var(--fg-dim);
+  }
+  .kv-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 14px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-size: 10.5px;
+  }
+  .kv-stats dd {
+    margin: 2px 0 0;
+    font-size: 15px;
+    color: var(--fg);
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<script>
+  type Req = { id: number; prompt: number; gen: number; done: number; blocks: number[]; c: string; prefilled: boolean };
+
+  const fig = document.querySelector<HTMLElement>('.kv');
+  if (fig) {
+    const grid = fig.querySelector<HTMLElement>('.kv-grid')!;
+    const cells = [...grid.children] as HTMLElement[];
+    const reqBox = fig.querySelector<HTMLElement>('.kv-reqs')!;
+    const stat = (k: string) => fig.querySelector<HTMLElement>(`[data-k="${k}"]`)!;
+    const BS = 16;
+    const N = cells.length;
+    const MAX_RUN = 5;
+    // Accent tints so concurrent requests are distinguishable (opacity-based, theme-safe).
+    const COLORS = [100, 72, 52, 86, 38].map((p) => `color-mix(in srgb, var(--accent) ${p}%, var(--bg))`);
+
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const free: number[] = [];
+    // Shuffle the pool so blocks scatter across the grid, like a real allocator after churn.
+    for (let i = 0; i < N; i++) free.push(i);
+    for (let i = N - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [free[i], free[j]] = [free[j], free[i]];
+    }
+    let running: Req[] = [];
+    let next = 0;
+    let step = 0;
+    let tokens = 0;
+    let colorIx = 0;
+
+    const tokensHeld = (r: Req) => (r.prefilled ? r.prompt + r.done : 0);
+    const need = (r: Req) => Math.ceil(tokensHeld(r) / BS);
+
+    function admit() {
+      if (running.length >= MAX_RUN || rnd() < 0.35) return;
+      const r: Req = {
+        id: next++,
+        prompt: 20 + Math.floor(rnd() * 140),
+        gen: 30 + Math.floor(rnd() * 160),
+        done: 0,
+        blocks: [],
+        c: COLORS[colorIx++ % COLORS.length],
+        prefilled: false,
+      };
+      running.push(r);
+    }
+
+    function tick() {
+      step++;
+      admit();
+      for (const r of running) {
+        if (!r.prefilled) r.prefilled = true; // prefill: whole prompt lands in one step
+        else {
+          r.done += 4; // decode 4 tokens per frame to keep the animation lively
+          tokens += 4;
+        }
+        while (r.blocks.length < need(r) && free.length) r.blocks.push(free.shift()!);
+      }
+      // Finished requests return their blocks to the end of the free list.
+      for (const r of running.filter((x) => x.done >= x.gen)) free.push(...r.blocks);
+      running = running.filter((x) => x.done < x.gen);
+      // Pool exhausted: preempt (drop) the newest request and free its blocks.
+      if (!free.length && running.length > 1) {
+        const v = running.pop()!;
+        free.push(...v.blocks);
+      }
+      render();
+    }
+
+    function render() {
+      const owner = new Map<number, { r: Req; last: boolean }>();
+      for (const r of running) {
+        r.blocks.forEach((b, i) => owner.set(b, { r, last: i === r.blocks.length - 1 && tokensHeld(r) % BS !== 0 }));
+      }
+      cells.forEach((el, i) => {
+        const o = owner.get(i);
+        el.classList.toggle('on', !!o);
+        el.classList.toggle('fill', !!o?.last);
+        if (o) el.style.setProperty('--c', o.r.c);
+        else el.style.removeProperty('--c');
+      });
+      reqBox.innerHTML = running
+        .slice(0, 5)
+        .map(
+          (r) =>
+            `<div><span>req ${String(r.id).padStart(3, '0')}</span><span class="bar"><b style="--c:${r.c};width:${Math.round((r.done / r.gen) * 100)}%"></b></span><span class="ph">${r.done ? 'decode' : 'prefill'} ${r.blocks.length}b</span></div>`,
+        )
+        .join('');
+      stat('used').textContent = `${N - free.length}/${N}`;
+      stat('run').textContent = String(running.length);
+      stat('step').textContent = String(step);
+      stat('tok').textContent = tokens.toLocaleString('en-US');
+    }
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Warm up so the first paint already shows a realistic, busy cache.
+    for (let i = 0; i < 26; i++) tick();
+    if (!reduce) {
+      let timer = 0;
+      let visible = true;
+      const start = () => {
+        if (!timer && visible && !document.hidden) timer = window.setInterval(tick, 220);
+      };
+      const stop = () => {
+        clearInterval(timer);
+        timer = 0;
+      };
+      new IntersectionObserver(([e]) => {
+        visible = e.isIntersecting;
+        visible ? start() : stop();
+      }).observe(fig);
+      document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+      start();
+    }
+  }
+</script>

@@ -1,0 +1,23 @@
+---
+import Page from '../../layouts/Page.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts } from '../../lib/data';
+const posts = await getPosts();
+---
+
+<Page
+  title="Writing"
+  label="[03] Writing"
+  heading="Notes from the stack."
+  lede="Deep dives, roadmaps and lessons from learning ML systems in public: GPUs, kernels, compilers and LLM serving."
+>
+  <section class="wrap list">
+    <PostList posts={posts} />
+  </section>
+</Page>
+
+<style>
+  .list {
+    padding-block: 48px 96px;
+  }
+</style>

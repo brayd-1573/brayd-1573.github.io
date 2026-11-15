@@ -1,0 +1,417 @@
+---
+import Base from '../layouts/Base.astro';
+import KVSim from '../components/KVSim.astro';
+import SectionHead from '../components/SectionHead.astro';
+import PostList from '../components/PostList.astro';
+import { site, focus, projects } from '../data/profile';
+import { getPosts, getIssues } from '../lib/data';
+import { pad, plain, ymd } from '../lib/md';
+
+const posts = (await getPosts()).slice(0, 4);
+const [latest] = await getIssues();
+const d = latest?.data;
+---
+
+<Base>
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="label" data-decode>{site.role}</p>
+        <h1 class="hero-title" data-decode="type" data-delay="250">Building the systems that serve large language models.</h1>
+        <p class="hero-sub" data-reveal style="--d:200ms">
+          I'm Brayden, a math and computer science student at Vanderbilt working toward a career in LLM inference.
+          I learn by building serving engines from scratch: kernels, KV caches, batching and scheduling.
+        </p>
+        <div class="hero-cta" data-reveal style="--d:320ms">
+          <a class="btn primary" href="#work">See the work <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn" href="/rundown/">Inference Rundown <span class="arr" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <div class="hero-viz" data-reveal style="--d:150ms">
+        <KVSim />
+      </div>
+    </div>
+    <div class="wrap">
+      <dl class="spec">
+        <div><dt class="label">Studying</dt><dd>Math + CS, Vanderbilt</dd></div>
+        <div><dt class="label">Focus</dt><dd>LLM inference & serving</dd></div>
+        <div><dt class="label">Stack</dt><dd>Python · C++ · CUDA · Metal</dd></div>
+        <div><dt class="label">Seeking</dt><dd>Summer 2027 internships</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============ FOCUS ============ -->
+  <section class="sec">
+    <div class="wrap">
+      <SectionHead n="01" label="Focus" title="Inference, end to end." dim="From the kernel up to the scheduler." />
+      <div class="focus">
+        {
+          focus.map((f, i) => (
+            <div class="focus-item" data-reveal style={`--d:${i * 80}ms`}>
+              <span class="label">{pad(i + 1)}</span>
+              <h3>{f.k}</h3>
+              <p>{f.v}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORK ============ -->
+  <section class="sec" id="work">
+    <div class="wrap">
+      <SectionHead n="02" label="Work" title="Projects." dim="Small engines, built to understand big ones." />
+      <div class="projects">
+        {
+          projects.map((p, i) => (
+            <article class="project" data-reveal>
+              <div class="project-meta">
+                <span class="label">{pad(i + 1)}</span>
+                <span class={`chip ${p.status.startsWith('Live') ? 'on live' : p.status === 'In progress' ? 'on' : ''}`}>
+                  <span class="dot" />
+                  {p.status}
+                </span>
+              </div>
+              <div class="project-main">
+                <h3>
+                  <a class="link" href={p.url}>{p.name}</a>
+                </h3>
+                <p class="project-sum">{p.summary}</p>
+                <ul class="project-points">
+                  {p.points.map((x) => (
+                    <li>{x}</li>
+                  ))}
+                </ul>
+              </div>
+              <div class="project-side">
+                <div class="stack">
+                  {p.stack.map((s) => (
+                    <span class="chip">{s}</span>
+                  ))}
+                </div>
+                {p.credit && (
+                  <a class="label credit" href={p.credit.url}>
+                    {p.credit.label} ↗
+                  </a>
+                )}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WRITING ============ -->
+  <section class="sec">
+    <div class="wrap">
+      <SectionHead n="03" label="Writing" title="Notes from the stack." dim="Learning in public." />
+      <PostList posts={posts} />
+      <div class="more"><a class="btn" href="/posts/">All writing <span class="arr" aria-hidden="true">→</span></a></div>
+    </div>
+  </section>
+
+  <!-- ============ RUNDOWN ============ -->
+  {
+    d && latest && (
+      <section class="sec">
+        <div class="wrap">
+          <SectionHead n="04" label="Inference Rundown" title="What moved in inference this week." />
+          <a class="rd-promo" href={`/rundown/${latest.id}/`} data-reveal>
+            <div class="rd-promo-top">
+              <span class="chip on live">
+                <span class="dot" />
+                Issue {pad(d.issue, 3)}
+              </span>
+              <span class="label">
+                {ymd(d.window.from)} – {ymd(d.window.to, true)}
+              </span>
+            </div>
+            <h3>{d.headline}</h3>
+            <p>{plain(d.tldr, 260)}</p>
+            <div class="rd-promo-stats">
+              {d.stats.map((s) => (
+                <div>
+                  <span class="v">{s.value}</span>
+                  <span class="label">{s.label}</span>
+                </div>
+              ))}
+            </div>
+            <span class="label go">
+              Read issue {d.issue} <span class="acc">→</span>
+            </span>
+          </a>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ============ CONTACT ============ -->
+  <section class="sec contact">
+    <div class="wrap">
+      <p class="label" data-decode>[05] Contact</p>
+      <h2 class="contact-title" data-reveal>
+        Let's talk <span class="acc">inference.</span>
+      </h2>
+      <p class="contact-sub" data-reveal>
+        I'm looking for internships in ML systems and LLM inference. I'm always happy to talk about kernels, serving or vLLM.
+      </p>
+      <div class="hero-cta" data-reveal>
+        <a class="btn primary" href={`mailto:${site.email}`}>{site.email}</a>
+        <a class="btn" href={site.github}>GitHub ↗</a>
+        <a class="btn" href={site.linkedin}>LinkedIn ↗</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    position: relative;
+    padding-top: clamp(48px, 9vw, 120px);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -12px -12px;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 40%;
+    background: linear-gradient(transparent, var(--bg));
+    pointer-events: none;
+  }
+  .hero > .wrap {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-grid {
+    display: grid;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (min-width: 1000px) {
+    .hero-grid {
+      grid-template-columns: 7fr 5fr;
+      gap: 64px;
+    }
+  }
+  .hero-title {
+    margin-top: 22px;
+    font-size: clamp(40px, 5.8vw, 84px);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    font-weight: 600;
+    max-width: 16ch;
+  }
+  .hero-sub {
+    margin-top: 28px;
+    max-width: 54ch;
+    font-size: clamp(17px, 1.6vw, 19px);
+    color: var(--fg-muted);
+  }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 36px;
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    margin: clamp(56px, 8vw, 96px) 0 0;
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 800px) {
+    .spec {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .spec > div {
+    padding: 20px 20px 28px 0;
+  }
+  .spec dd {
+    margin: 8px 0 0;
+    font-size: 16px;
+  }
+
+  .focus {
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  @media (min-width: 700px) {
+    .focus {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1100px) {
+    .focus {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .focus-item {
+    background: var(--bg);
+    padding: 28px 24px 36px;
+    transition: background-color 200ms ease;
+  }
+  .focus-item:hover {
+    background: var(--bg-elev);
+  }
+  .focus-item h3 {
+    margin: clamp(16px, 4vw, 40px) 0 12px;
+    font-size: 22px;
+  }
+  .focus-item p {
+    color: var(--fg-muted);
+    font-size: 15.5px;
+  }
+
+  .projects {
+    border-top: 1px solid var(--line);
+  }
+  .project {
+    display: grid;
+    gap: 20px;
+    padding: 36px 0 40px;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 900px) {
+    .project {
+      grid-template-columns: 3fr 6fr 3fr;
+      gap: 32px;
+    }
+  }
+  .project-meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    align-self: start;
+  }
+  .project h3 {
+    font-size: clamp(28px, 3.4vw, 40px);
+    letter-spacing: -0.03em;
+  }
+  .project-sum {
+    margin-top: 14px;
+    font-size: 17px;
+    color: var(--fg-muted);
+    max-width: 58ch;
+  }
+  .project-points {
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    font-size: 15px;
+    color: var(--fg-muted);
+  }
+  .project-points li {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+  }
+  .project-points li::before {
+    content: '›';
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .project-side {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+  }
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  @media (min-width: 900px) {
+    .stack {
+      justify-content: flex-end;
+    }
+    .credit {
+      text-align: right;
+    }
+  }
+  .credit:hover {
+    color: var(--fg);
+  }
+
+  .more {
+    margin-top: 32px;
+  }
+
+  .rd-promo {
+    display: block;
+    position: relative;
+    padding: clamp(24px, 4vw, 48px);
+    border: 1px solid var(--line);
+    background:
+      linear-gradient(135deg, var(--accent-soft), transparent 45%),
+      var(--bg-elev);
+    transition: border-color 200ms ease;
+  }
+  .rd-promo:hover {
+    border-color: var(--accent-line);
+  }
+  .rd-promo-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rd-promo h3 {
+    margin-top: 28px;
+    font-size: clamp(26px, 3.4vw, 42px);
+    letter-spacing: -0.03em;
+    max-width: 26ch;
+  }
+  .rd-promo p {
+    margin-top: 16px;
+    max-width: 70ch;
+    color: var(--fg-muted);
+  }
+  .rd-promo-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 48px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  .rd-promo-stats > div {
+    display: grid;
+    gap: 4px;
+  }
+  .rd-promo-stats .v {
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .rd-promo .go {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--fg);
+  }
+
+  .contact-title {
+    margin-top: 24px;
+    font-size: clamp(48px, 9vw, 128px);
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+  }
+  .contact-sub {
+    margin-top: 24px;
+    max-width: 52ch;
+    font-size: 18px;
+    color: var(--fg-muted);
+  }
+</style>
