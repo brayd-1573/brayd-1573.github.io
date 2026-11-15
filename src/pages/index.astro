@@ -103,13 +103,9 @@ const d = latest?.data;
           ))
         }
       </div>
-    </div>
-  </section>
-
-  <!-- ============ FIG.1 BAND ============ -->
-  <section class="band" aria-label="Continuous batching illustration">
-    <div class="wrap" data-reveal>
-      <BatchSim />
+      <div class="fig1" data-reveal>
+        <BatchSim />
+      </div>
     </div>
   </section>
 
@@ -354,12 +350,8 @@ const d = latest?.data;
     margin-top: 32px;
   }
 
-  .band {
-    padding-block: clamp(40px, 6vw, 72px);
-    border-top: 1px solid var(--line);
-    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: -12px -12px;
+  .fig1 {
+    margin-top: clamp(40px, 6vw, 64px);
   }
 
   .rd-promo {

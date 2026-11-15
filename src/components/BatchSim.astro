@@ -75,6 +75,9 @@
   .lg.dec {
     background: color-mix(in srgb, var(--accent) 45%, var(--bg));
   }
+  :root:not([data-theme='light']) .lg.dec {
+    background: color-mix(in srgb, var(--accent) 64%, var(--bg));
+  }
   .lg.idle {
     border: 1px solid var(--line-strong);
   }
@@ -210,7 +213,11 @@
       const a = rgb(accent);
       const b = rgb(bg);
       const mix = (p: number) => `rgb(${a.map((v, i) => Math.round((v * p + b[i] * (100 - p)) / 100)).join(',')})`;
-      colors = { pre: accent, dec: [mix(58), mix(40), mix(30), mix(48)], idle: line };
+      // Dark mode needs much stronger mixes: toward a near-black background, low percentages
+      // read as black. Light mode mixes toward white, so lower percentages stay visible.
+      const dark = document.documentElement.dataset.theme !== 'light';
+      const dec = dark ? [72, 58, 48, 64] : [58, 40, 30, 48];
+      colors = { pre: accent, dec: dec.map(mix), idle: line };
     }
 
     let dpr = 1;
@@ -240,8 +247,10 @@
           const y = s * rowPitch;
           if (cell.kind === 'idle') {
             ctx.strokeStyle = colors.idle;
+            ctx.globalAlpha = 0.7;
             ctx.lineWidth = 1;
             ctx.strokeRect(x + 0.5, y + 0.5, CELL - 1, cellH - 1);
+            ctx.globalAlpha = 1;
           } else {
             ctx.fillStyle = cell.kind === 'pre' ? colors.pre : colors.dec[cell.id % colors.dec.length];
             ctx.fillRect(x, y, CELL, cellH);
