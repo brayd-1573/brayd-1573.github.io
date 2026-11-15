@@ -47,6 +47,12 @@ const isCurrent = (href: string) =>
         try { t = localStorage.getItem('theme') || 'dark'; } catch (e) {}
         document.documentElement.dataset.theme = t;
         document.documentElement.classList.add('js');
+        // The old Chirpy site installed a service worker; make sure none lingers.
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (rs) {
+            rs.forEach(function (r) { r.unregister(); });
+          });
+        }
       })();
     </script>
   </head>
