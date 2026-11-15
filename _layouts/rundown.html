@@ -1,0 +1,197 @@
+---
+layout: page
+---
+{% comment %}
+  One weekly issue. All content lives in _data/digests/<key>.json (written by the weekly
+  Claude routine, see tools/digest/INSTRUCTIONS.md); this file only renders it.
+{% endcomment %}
+{% assign d = site.data.digests[page.key] %}
+<link rel="stylesheet" href="{{ '/assets/css/rundown.css' | relative_url }}">
+
+<div class="rd">
+  {% include rundown-note.html %}
+
+  <div class="rd-mast">
+    <div class="rd-mast-row">
+      <span class="rd-kicker">Issue {{ d.issue }} &middot; {{ d.window.from | date: "%b %-d" }} &ndash; {{ d.window.to | date: "%b %-d, %Y" }}</span>
+      <a class="rd-kicker" href="{{ '/rundown/' | relative_url }}">All issues &rarr;</a>
+    </div>
+    <h2 class="rd-headline">{{ d.headline | escape }}</h2>
+  </div>
+
+  <div class="rd-tldr">
+    <div class="rd-kicker">If you read one thing</div>
+    <p>{{ d.tldr | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+  </div>
+
+  {% if d.stats and d.stats.size > 0 %}
+  <div class="rd-stats">
+    {% for s in d.stats %}
+    <div class="rd-stat"><div class="v">{{ s.value | escape }}</div><div class="l">{{ s.label | escape }}</div></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% assign sec = 0 %}
+
+  {% if d.building and d.building.repos and d.building.repos.size > 0 %}
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec rd-build">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>What I built this week</h3></header>
+    {% if d.building.note %}<p>{{ d.building.note | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>{% endif %}
+    <div class="rd-grid">
+      {% for r in d.building.repos %}
+      <div class="rd-card">
+        <div class="repo"><h4><a href="{{ r.url }}">{{ r.name | escape }}</a></h4><span class="count">+{{ r.commits }} commit{% if r.commits != 1 %}s{% endif %}</span></div>
+        {% if r.highlights %}<ul>{% for h in r.highlights %}<li>{{ h | escape }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if d.building.upstream and d.building.upstream.size > 0 %}
+    <div class="rd-followups"><span class="rd-kicker">Upstream PRs</span>
+      <ul>{% for p in d.building.upstream %}<li><a href="{{ p.url }}">{{ p.title | escape }}</a> <span class="rd-chip plain">{{ p.state }}</span></li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Merged in vLLM</h3><span class="sub">the PRs worth reading</span></header>
+    <ol class="rd-list">
+      {% for p in d.prs %}
+      <li>
+        <span class="pr-num">#{{ p.number }}</span>
+        <div>
+          <h4><a href="{{ p.url }}">{{ p.title | escape }}</a>{% if p.read_the_diff %}<span class="diff">read the diff</span>{% endif %}</h4>
+          <p>{{ p.summary | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+          <p class="why"><span class="rd-chip plain">{{ p.area | escape }}</span> {{ p.why_it_matters | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Contribution picks</h3><span class="sub">open vLLM issues that fit what I&rsquo;ve built</span></header>
+    <div class="rd-grid">
+      {% for c in d.contribute %}
+      <div class="rd-card rd-pick">
+        <div class="meta">
+          <span class="rd-badge {{ c.difficulty }}">{{ c.difficulty }}</span>
+          <span>fit</span>
+          <span class="rd-fit" title="fit {{ c.fit }}/5">{% for i in (1..5) %}<i{% if i <= c.fit %} class="on"{% endif %}></i>{% endfor %}</span>
+          <span class="rd-mono">#{{ c.number }}</span>
+        </div>
+        <h4><a href="{{ c.url }}">{{ c.title | escape }}</a></h4>
+        <p class="why">{{ c.why_you | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+        <ol>{% for s in c.first_steps %}<li>{{ s | markdownify | remove: '<p>' | remove: '</p>' | strip }}</li>{% endfor %}</ol>
+        <div class="meta">{{ c.status | escape }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if d.followups and d.followups.size > 0 %}
+    <div class="rd-followups"><span class="rd-kicker">Last week&rsquo;s picks</span>
+      <ul>{% for f in d.followups %}<li><a href="{{ f.url }}">{{ f.title | escape }}</a> &mdash; {{ f.status | escape }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </section>
+
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Industry</h3><span class="sub">hardware, software, market</span></header>
+    <div class="rd-grid">
+      {% for n in d.news %}
+      <div class="rd-card">
+        <div class="meta"><span class="rd-chip t-{{ n.tag }}">{{ n.tag }}</span><span>{{ n.source | escape }}</span></div>
+        <h4><a href="{{ n.url }}">{{ n.title | escape }}</a></h4>
+        <p>{{ n.summary | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if d.releases and d.releases.size > 0 %}
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Releases</h3></header>
+    <div class="rd-releases">
+      {% for r in d.releases %}
+      <div class="rd-release"><a class="rd-rel" href="{{ r.url }}">{{ r.repo | split: '/' | last }} {{ r.tag | escape }}</a><span>{{ r.summary | markdownify | remove: '<p>' | remove: '</p>' | strip }}</span></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Research</h3><span class="sub">papers people are talking about</span></header>
+    <div class="rd-grid">
+      {% for p in d.papers %}
+      <div class="rd-card">
+        <div class="meta"><span class="rd-badge {{ p.reproduce }}">reproduce: {{ p.reproduce }}</span><span>{{ p.signal | escape }}</span></div>
+        <h4><a href="{{ p.url }}">{{ p.title | escape }}</a></h4>
+        <p class="why">{{ p.authors | escape }}</p>
+        <p><strong>Claim:</strong> {{ p.claim | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+        <p class="why">{{ p.why_it_matters | markdownify | remove: '<p>' | remove: '</p>' | strip }}{% if p.reproduce_note %} <em>{{ p.reproduce_note | escape }}</em>{% endif %}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if d.videos and d.videos.size > 0 %}
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Watch</h3><span class="sub">talks, lectures, breakdowns</span></header>
+    <div class="rd-grid">
+      {% for v in d.videos %}
+      <div class="rd-card rd-video">
+        <a class="thumb" href="{{ v.url }}"><img src="https://i.ytimg.com/vi/{{ v.video_id }}/mqdefault.jpg" alt="{{ v.title | escape }}" loading="lazy" width="320" height="180">{% if v.length %}<span class="len">{{ v.length }}</span>{% endif %}</a>
+        <div class="body">
+          <div class="meta"><span class="rd-chip plain">{{ v.kind }}</span><span>{{ v.channel | escape }}</span></div>
+          <h4><a href="{{ v.url }}">{{ v.title | escape }}</a></h4>
+          <p class="why">{{ v.why | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if d.jobs %}
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Job market</h3></header>
+    <p>{{ d.jobs.summary | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+    {% if d.jobs.skills %}
+    <div class="rd-skills">{% for s in d.jobs.skills %}<div class="rd-skill"><strong>{{ s.name | escape }}</strong>{% if s.note %} <span>&middot; {{ s.note | escape }}</span>{% endif %}</div>{% endfor %}</div>
+    {% endif %}
+    {% if d.jobs.postings and d.jobs.postings.size > 0 %}
+    <ul>{% for j in d.jobs.postings %}<li><a href="{{ j.url }}">{{ j.company | escape }}</a> &mdash; {{ j.role | escape }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% assign sec = sec | plus: 1 %}
+  <section class="rd-sec">
+    <header><span class="num">{% if sec < 10 %}0{% endif %}{{ sec }}</span><h3>Question of the week</h3><span class="sub">back-of-envelope; answer next issue</span></header>
+    <div class="rd-question">
+      <div class="rd-kicker">This week</div>
+      <p class="prompt">{{ d.question.prompt | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+      {% if d.question.hint %}<details><summary>Hint</summary><div class="answer">{{ d.question.hint | markdownify }}</div></details>{% endif %}
+    </div>
+    {% if d.last_answer %}
+    <div class="rd-question">
+      <div class="rd-kicker">Last week&rsquo;s answer</div>
+      <p class="prompt">{{ d.last_answer.prompt | markdownify | remove: '<p>' | remove: '</p>' | strip }}</p>
+      <details><summary>Show the worked answer</summary><div class="answer">{{ d.last_answer.answer | markdownify }}</div></details>
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="rd-foot">
+    <span>Sources: GitHub, arXiv, Hugging Face Papers, Hacker News, vendor blogs, YouTube. Every item links to its source.</span>
+    <a href="{{ '/rundown/' | relative_url }}">All issues &rarr;</a>
+  </div>
+</div>

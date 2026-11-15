@@ -71,3 +71,56 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # Open an issue (=> GitHub email notification) when a new Inference Rundown was deployed.
+  # Created by github-actions[bot], so GitHub notifies you as the repo owner/watcher.
+  notify-rundown:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect new rundown
+        id: detect
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE="HEAD~1"
+          fi
+          f=$(git diff --name-only --diff-filter=A "$BEFORE" HEAD -- '_data/digests/*.json' | sort | tail -1)
+          echo "file=$f" >> "$GITHUB_OUTPUT"
+
+      - name: Open notification issue
+        if: steps.detect.outputs.file != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE: ${{ steps.detect.outputs.file }}
+          SITE: https://brayd-1573.github.io
+        run: |
+          key=$(basename "$FILE" .json)
+          issue=$(jq -r .issue "$FILE")
+          headline=$(jq -r .headline "$FILE")
+          url="$SITE/rundown/$key/"
+          {
+            echo "## [$headline]($url)"
+            echo
+            jq -r .tldr "$FILE"
+            echo
+            echo "**This week:**"
+            jq -r '.prs | length | "- \(.) vLLM PRs worth reading"' "$FILE"
+            jq -r '.contribute[] | "- Contribution pick: [#\(.number) \(.title)](\(.url)) (\(.difficulty))"' "$FILE"
+            jq -r '.papers | length | "- \(.) papers"' "$FILE"
+            jq -r '(.videos // []) | length | "- \(.) videos"' "$FILE"
+            echo
+            echo "**[Read Rundown #$issue →]($url)**"
+            echo
+            echo "_Close this issue once you've read it._"
+          } > body.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "Inference Rundown #$issue: $headline" --body-file body.md

@@ -172,6 +172,9 @@ collections:
   tabs:
     output: true
     sort_by: order
+  digests: # weekly Inference Rundown (data in _data/digests/, see tools/digest/)
+    output: true
+    permalink: /rundown/:name/
 
 defaults:
   - scope:
@@ -194,6 +197,13 @@ defaults:
     values:
       layout: page
       permalink: /:title/
+  - scope:
+      path: ""
+      type: digests
+    values:
+      layout: rundown
+      toc: false
+      comments: false
 
 sass:
   style: compressed
