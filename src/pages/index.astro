@@ -1,7 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import KVSim from '../components/KVSim.astro';
-import BatchSim from '../components/BatchSim.astro';
+import Roofline from '../components/Roofline.astro';
+import ScrollRail from '../components/ScrollRail.astro';
 import SectionHead from '../components/SectionHead.astro';
 import PostList from '../components/PostList.astro';
 import { site, focus, projects } from '../data/profile';
@@ -14,8 +15,9 @@ const d = latest?.data;
 ---
 
 <Base>
+  <ScrollRail />
   <!-- ============ HERO ============ -->
-  <section class="hero">
+  <section class="hero" id="top" data-rail="00 Intro">
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="label" data-decode>{site.role}</p>
@@ -44,7 +46,7 @@ const d = latest?.data;
   </section>
 
   <!-- ============ FOCUS ============ -->
-  <section class="sec">
+  <section class="sec" id="focus" data-rail="01 Focus">
     <div class="wrap">
       <SectionHead n="01" label="Focus" title="Inference, end to end." dim="From the kernel up to the scheduler." />
       <div class="focus">
@@ -62,7 +64,7 @@ const d = latest?.data;
   </section>
 
   <!-- ============ WORK ============ -->
-  <section class="sec" id="projects">
+  <section class="sec" id="projects" data-rail="02 Projects">
     <div class="wrap">
       <SectionHead n="02" label="Projects" title="Small engines," dim="built to understand big ones." />
       <div class="projects">
@@ -104,15 +106,15 @@ const d = latest?.data;
         }
       </div>
       <div class="fig1" data-reveal>
-        <BatchSim />
+        <Roofline />
       </div>
     </div>
   </section>
 
   <!-- ============ BLOG ============ -->
-  <section class="sec">
+  <section class="sec" id="blog" data-rail="03 Blog">
     <div class="wrap">
-      <SectionHead n="03" label="Blog" title="Notes from the stack." dim="Learning in public." />
+      <SectionHead n="03" label="Blog" title="Technical blog." dim="Deep dives on GPUs, kernels and LLM serving." />
       <PostList posts={posts} />
       <div class="more"><a class="btn" href="/posts/">All posts <span class="arr" aria-hidden="true">→</span></a></div>
     </div>
@@ -121,7 +123,7 @@ const d = latest?.data;
   <!-- ============ RUNDOWN ============ -->
   {
     d && latest && (
-      <section class="sec">
+      <section class="sec" id="rundown" data-rail="04 Digest">
         <div class="wrap">
           <SectionHead n="04" label={site.rundown} title="What moved this week." dim="Every Sunday." />
           <a class="rd-promo" href={`/rundown/${latest.id}/`} data-reveal>
@@ -154,7 +156,7 @@ const d = latest?.data;
   }
 
   <!-- ============ CONTACT ============ -->
-  <section class="sec contact">
+  <section class="sec contact" id="contact" data-rail="05 Contact">
     <div class="wrap">
       <p class="label" data-decode>[05] Contact</p>
       <h2 class="contact-title" data-reveal>

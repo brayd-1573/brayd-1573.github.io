@@ -1,0 +1,328 @@
+---
+// fig.1: interactive roofline for LLM decode. Event-driven only (no animation loop): it
+// re-renders when the user moves the slider or flips a toggle.
+//
+// Model: one decode step of a dense 8B-parameter model reads every weight once and does
+// 2·P·B FLOPs for batch B. So arithmetic intensity = 2·P·B / (P·bytes_per_param)
+//   = B FLOP/byte at BF16, 2B at FP8.  Attainable = min(peak, BW · AI).
+// Deliberately ignores KV-cache reads, attention FLOPs and kernel overheads (stated in caption).
+// GPU specs: dense tensor-core peaks and HBM bandwidth from NVIDIA's H100 SXM / H200 datasheets.
+const W = 640;
+const H = 250;
+const PAD = { l: 52, r: 16, t: 14, b: 36 };
+const X = { min: 1, max: 4096 }; // FLOP/byte
+const Y = { min: 1, max: 4000 }; // TFLOP/s
+const lx = (v: number) => PAD.l + ((Math.log2(v) - Math.log2(X.min)) / (Math.log2(X.max) - Math.log2(X.min))) * (W - PAD.l - PAD.r);
+const ly = (v: number) => H - PAD.b - ((Math.log10(v) - Math.log10(Y.min)) / (Math.log10(Y.max) - Math.log10(Y.min))) * (H - PAD.t - PAD.b);
+const xt = [1, 4, 16, 64, 256, 1024, 4096];
+const yt = [1, 10, 100, 1000];
+---
+
+<figure class="rf" data-w={W} data-h={H}>
+  <div class="rf-top label">
+    <span><span class="acc">fig.1</span> is decode memory-bound? · roofline for an 8B dense model</span>
+    <span class="rf-tag">interactive</span>
+  </div>
+
+  <div class="rf-body">
+    <div class="rf-ctl">
+      <div class="seg" role="group" aria-label="GPU">
+        <button type="button" data-gpu="h100" aria-pressed="true">H100 SXM</button>
+        <button type="button" data-gpu="h200" aria-pressed="false">H200</button>
+      </div>
+      <div class="seg" role="group" aria-label="Weight precision">
+        <button type="button" data-prec="bf16" aria-pressed="true">BF16</button>
+        <button type="button" data-prec="fp8" aria-pressed="false">FP8</button>
+      </div>
+
+      <label class="rf-slider">
+        <span class="label">Batch size <b data-o="b">1</b></span>
+        <input type="range" min="0" max="1000" value="0" step="1" aria-label="Batch size (log scale, 1 to 1024)" />
+        <span class="ticks label" aria-hidden="true"><span>1</span><span>32</span><span>1024</span></span>
+      </label>
+
+      <dl class="rf-out">
+        <div><dt class="label">Regime</dt><dd data-o="regime">memory-bound</dd></div>
+        <div><dt class="label">Intensity</dt><dd><span data-o="ai">1</span> <small>FLOP/B</small></dd></div>
+        <div><dt class="label">Step time</dt><dd><span data-o="step">4.8</span> <small>ms</small></dd></div>
+        <div><dt class="label">Per user</dt><dd><span data-o="user">209</span> <small>tok/s</small></dd></div>
+        <div><dt class="label">Total</dt><dd><span data-o="total">209</span> <small>tok/s</small></dd></div>
+        <div><dt class="label">Ridge at</dt><dd>B ≈ <span data-o="ridge">295</span></dd></div>
+      </dl>
+    </div>
+
+    <svg class="rf-plot" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Roofline plot: attainable TFLOP/s versus arithmetic intensity, with the current batch size marked">
+      <g class="grid">
+        {xt.map((v) => <line x1={lx(v)} x2={lx(v)} y1={PAD.t} y2={H - PAD.b} />)}
+        {yt.map((v) => <line x1={PAD.l} x2={W - PAD.r} y1={ly(v)} y2={ly(v)} />)}
+      </g>
+      <g class="axis">
+        {xt.map((v) => <text x={lx(v)} y={H - PAD.b + 16} text-anchor="middle">{v}</text>)}
+        {yt.map((v) => <text x={PAD.l - 8} y={ly(v) + 4} text-anchor="end">{v}</text>)}
+        <text x={(PAD.l + W - PAD.r) / 2} y={H - 4} text-anchor="middle">arithmetic intensity (FLOP / byte)</text>
+        <text x={12} y={(PAD.t + H - PAD.b) / 2} text-anchor="middle" transform={`rotate(-90 12 ${(PAD.t + H - PAD.b) / 2})`}>TFLOP/s</text>
+      </g>
+      <polyline class="roof" data-o="roof" points="" />
+      <line class="drop" data-o="drop" />
+      <text class="ridge-l" data-o="ridgel">ridge</text>
+      <circle class="pt-halo" data-o="halo" r="11" />
+      <circle class="pt" data-o="pt" r="5" />
+    </svg>
+  </div>
+
+  <figcaption class="label rf-cap">
+    Back-of-envelope: each decode step reads all weights once (2·P·B FLOPs). Ignores KV-cache reads, attention and
+    overheads, which push real ridge points higher.
+  </figcaption>
+</figure>
+
+<style>
+  .rf {
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    padding: 16px 16px 14px;
+  }
+  .rf-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-size: 11px;
+  }
+  .rf-tag {
+    padding: 0 6px;
+    border: 1px solid var(--accent-line);
+    color: var(--accent);
+  }
+  .rf-body {
+    display: grid;
+    gap: 20px;
+  }
+  @media (min-width: 900px) {
+    .rf-body {
+      grid-template-columns: 300px 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+  }
+  .rf-ctl {
+    display: grid;
+    gap: 14px;
+  }
+  .seg {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border: 1px solid var(--line-strong);
+  }
+  .seg button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+  .seg button + button {
+    border-left: 1px solid var(--line-strong);
+  }
+  .seg button[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .seg button:hover {
+    color: var(--fg);
+  }
+  .rf-slider {
+    display: grid;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .rf-slider b {
+    color: var(--fg);
+    font-weight: 500;
+    margin-left: 6px;
+  }
+  .rf-slider input {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 24px;
+    cursor: pointer;
+  }
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+  }
+  .rf-out {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin: 4px 0 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .rf-out > div {
+    background: var(--bg-elev);
+    padding: 10px;
+  }
+  .rf-out dt {
+    font-size: 10px;
+  }
+  .rf-out dd {
+    margin: 4px 0 0;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .rf-out small {
+    font-size: 10px;
+    color: var(--fg-dim);
+  }
+  .rf-out [data-o='regime'] {
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .rf-out [data-o='regime'].cb {
+    color: var(--warn);
+  }
+  .rf-plot {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--font-mono);
+  }
+  .grid line {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .axis text {
+    fill: var(--fg-dim);
+    font-size: 10px;
+  }
+  .roof {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+  .drop {
+    stroke: var(--accent);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+  .ridge-l {
+    fill: var(--fg-dim);
+    font-size: 10px;
+  }
+  .pt {
+    fill: var(--accent);
+  }
+  .pt-halo {
+    fill: var(--accent);
+    opacity: 0.18;
+  }
+  .rf-plot .pt,
+  .rf-plot .pt-halo,
+  .rf-plot .drop {
+    transition:
+      cx 180ms var(--ease-out),
+      cy 180ms var(--ease-out),
+      x1 180ms var(--ease-out),
+      x2 180ms var(--ease-out),
+      y2 180ms var(--ease-out);
+  }
+  .rf-cap {
+    margin-top: 12px;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    line-height: 1.5;
+  }
+</style>
+
+<script>
+  const fig = document.querySelector<HTMLElement>('.rf');
+  if (fig) {
+    const W = Number(fig.dataset.w);
+    const H = Number(fig.dataset.h);
+    const PAD = { l: 52, r: 16, t: 14, b: 36 };
+    const lx = (v: number) => PAD.l + (Math.log2(v) / 12) * (W - PAD.l - PAD.r); // x: 1 .. 4096
+    const ly = (v: number) => H - PAD.b - ((Math.log10(v) - 0) / Math.log10(4000)) * (H - PAD.t - PAD.b); // y: 1 .. 4000
+
+    const GPUS = {
+      h100: { bw: 3.35e12, bf16: 989e12, fp8: 1979e12 },
+      h200: { bw: 4.8e12, bf16: 989e12, fp8: 1979e12 },
+    } as const;
+    const P = 8e9;
+    const state = { gpu: 'h100' as keyof typeof GPUS, prec: 'bf16' as 'bf16' | 'fp8', b: 1 };
+
+    const o = (k: string) => fig.querySelector<SVGElement & HTMLElement>(`[data-o="${k}"]`)!;
+    const slider = fig.querySelector<HTMLInputElement>('input[type=range]')!;
+    const fmt = (n: number) =>
+      n >= 1e5 ? `${Math.round(n / 1000)}k` : n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 }) : n >= 10 ? n.toFixed(0) : n.toFixed(1);
+
+    function render() {
+      const g = GPUS[state.gpu];
+      const peak = g[state.prec];
+      const bpp = state.prec === 'bf16' ? 2 : 1;
+      const perB = 2 / bpp; // FLOP/byte contributed per sequence in the batch
+      const ai = state.b * perB;
+      const ridgeAI = peak / g.bw;
+      const bytes = P * bpp;
+      const flops = 2 * P * state.b;
+      const step = Math.max(bytes / g.bw, flops / peak); // seconds
+      const attained = Math.min(peak, g.bw * ai) / 1e12;
+      const cb = ai >= ridgeAI;
+
+      // roofline polyline (clipped to the plot's x range)
+      const xs = [1, ridgeAI, 4096];
+      o('roof').setAttribute('points', xs.map((x) => `${lx(x)},${ly(Math.min(peak, g.bw * x) / 1e12)}`).join(' '));
+      o('ridgel').setAttribute('x', String(lx(ridgeAI) - 14));
+      o('ridgel').setAttribute('y', String(ly(peak / 1e12) - 8));
+      const px = lx(ai);
+      const py = ly(attained);
+      for (const k of ['pt', 'halo']) {
+        o(k).setAttribute('cx', String(px));
+        o(k).setAttribute('cy', String(py));
+      }
+      const drop = o('drop');
+      drop.setAttribute('x1', String(px));
+      drop.setAttribute('x2', String(px));
+      drop.setAttribute('y1', String(py));
+      drop.setAttribute('y2', String(H - PAD.b));
+
+      o('b').textContent = String(state.b);
+      o('ai').textContent = fmt(ai);
+      o('regime').textContent = cb ? 'compute-bound' : 'memory-bound';
+      o('regime').classList.toggle('cb', cb);
+      o('step').textContent = (step * 1000).toFixed(step * 1000 < 10 ? 2 : 1);
+      o('user').textContent = fmt(1 / step);
+      o('total').textContent = fmt(state.b / step);
+      o('ridge').textContent = String(Math.round(ridgeAI / perB));
+    }
+
+    slider.addEventListener('input', () => {
+      state.b = Math.max(1, Math.round(2 ** ((Number(slider.value) / 1000) * 10)));
+      render();
+    });
+    fig.querySelectorAll<HTMLButtonElement>('[data-gpu],[data-prec]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.gpu ? 'gpu' : 'prec';
+        if (group === 'gpu') state.gpu = btn.dataset.gpu as keyof typeof GPUS;
+        else state.prec = btn.dataset.prec as 'bf16' | 'fp8';
+        btn.parentElement!.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        render();
+      }),
+    );
+    render();
+  }
+</script>

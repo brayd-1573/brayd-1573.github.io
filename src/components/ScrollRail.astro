@@ -1,0 +1,251 @@
+---
+// Left-margin scroll rail, themed as speculative decoding. The column of tokens represents the
+// whole page: tokens above your scroll position are "accepted" by the target model, the next K
+// are the draft model's guesses, and a few positions show a "resampled" correction token.
+// Section ticks sit at each [data-rail] section's real position. Updates only on scroll/resize.
+// Wide screens: vertical rail in the left gutter. Narrow screens: a 2px progress line.
+const N = 56; // tokens in the column
+const K = 4; // draft length
+---
+
+<nav class="rail" aria-label="Page sections" data-n={N} data-k={K}>
+  <div class="rail-col" aria-hidden="true">
+    {Array.from({ length: N }, () => <i></i>)}
+  </div>
+  <ol class="rail-marks"></ol>
+  <div class="rail-foot label" aria-hidden="true">
+    <span class="acc" data-r="pct">0%</span>
+    <span>k={K}</span>
+  </div>
+</nav>
+<div class="rail-mobile" aria-hidden="true"><b></b></div>
+
+<style>
+  .rail {
+    position: fixed;
+    left: max(16px, calc((100vw - var(--maxw)) / 2 - 92px));
+    top: 104px;
+    bottom: 40px;
+    z-index: 20;
+    width: 64px;
+    display: none;
+  }
+  @media (min-width: 1360px) {
+    .rail {
+      display: block;
+    }
+  }
+  .rail-col {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 28px;
+    width: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .rail-col i {
+    flex: 1;
+    min-height: 2px;
+    border: 1px solid var(--line-strong);
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease;
+  }
+  /* accepted by the target model */
+  .rail-col i.a {
+    background: color-mix(in srgb, var(--accent) 55%, var(--bg));
+    border-color: transparent;
+  }
+  /* resampled correction (draft token rejected, target's token kept) */
+  .rail-col i.a.x {
+    background: var(--fg-muted);
+  }
+  /* current position */
+  .rail-col i.c {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-line);
+  }
+  /* draft tokens ahead of the cursor */
+  .rail-col i.d {
+    border-color: var(--accent-line);
+    border-style: dashed;
+  }
+  .rail-marks {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 28px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rail-marks li {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+  }
+  .rail-marks a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding-left: 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+    white-space: nowrap;
+    transition: color 160ms ease;
+  }
+  .rail-marks a::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    width: 4px;
+    height: 1px;
+    background: currentColor;
+  }
+  .rail-marks a .t {
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+  .rail-marks a:hover,
+  .rail-marks a:focus-visible,
+  .rail-marks li.on a {
+    color: var(--fg);
+  }
+  .rail-marks li.on a {
+    color: var(--accent);
+  }
+  .rail:hover .rail-marks a .t,
+  .rail-marks a:focus-visible .t {
+    opacity: 1;
+    transform: none;
+  }
+  .rail-foot {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: grid;
+    font-size: 9.5px;
+    line-height: 1.4;
+  }
+
+  .rail-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 60;
+  }
+  .rail-mobile b {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+  }
+  @media (min-width: 1360px) {
+    .rail-mobile {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const rail = document.querySelector<HTMLElement>('.rail');
+  if (rail) {
+    const N = Number(rail.dataset.n);
+    const K = Number(rail.dataset.k);
+    const cells = [...rail.querySelectorAll<HTMLElement>('.rail-col i')];
+    const marks = rail.querySelector<HTMLOListElement>('.rail-marks')!;
+    const pct = rail.querySelector<HTMLElement>('[data-r="pct"]')!;
+    const bar = document.querySelector<HTMLElement>('.rail-mobile b');
+    // Deterministic "rejection" positions (~1 in 7), so the column looks the same every visit.
+    const rejected = new Set<number>();
+    for (let i = 0, s = 3; i < N; i++) {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      if (i > 2 && s % 7 === 0) rejected.add(i);
+    }
+    cells.forEach((c, i) => rejected.has(i) && c.classList.add('x'));
+
+    const sections = [...document.querySelectorAll<HTMLElement>('[data-rail]')];
+    const items = sections.map((sec) => {
+      const li = document.createElement('li');
+      const [n, ...rest] = (sec.dataset.rail ?? '').split(' ');
+      li.innerHTML = `<a href="#${sec.id}"><span>${n}</span><span class="t">${rest.join(' ')}</span></a>`;
+      marks.appendChild(li);
+      return { sec, li };
+    });
+
+    let maxScroll = 1;
+    function layout() {
+      const doc = document.documentElement;
+      maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+      const total = doc.scrollHeight;
+      for (const { sec, li } of items) {
+        const top = sec.getBoundingClientRect().top + window.scrollY;
+        li.style.top = `${Math.min(100, (top / total) * 100)}%`;
+      }
+    }
+
+    let lastCur = -1;
+    function update() {
+      const p = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+      if (bar) bar.style.transform = `scaleX(${p})`;
+      pct.textContent = `${Math.round(p * 100)}%`;
+      const cur = Math.min(N - 1, Math.floor(p * (N - 1) + 0.0001));
+      if (cur !== lastCur) {
+        lastCur = cur;
+        cells.forEach((c, i) => {
+          c.classList.toggle('a', i < cur);
+          c.classList.toggle('c', i === cur);
+          c.classList.toggle('d', i > cur && i <= cur + K);
+        });
+      }
+      // Active section = last one whose top is above the middle of the viewport.
+      const mid = window.innerHeight * 0.45;
+      let active = -1;
+      items.forEach(({ sec }, i) => {
+        if (sec.getBoundingClientRect().top < mid) active = i;
+      });
+      items.forEach(({ li }, i) => li.classList.toggle('on', i === active));
+    }
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        update();
+      });
+    };
+    const relayout = () => {
+      layout();
+      update();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', relayout);
+    window.addEventListener('load', relayout);
+    // Re-measure only when the page height really changes (e.g. fonts/images load).
+    let lastH = 0;
+    new ResizeObserver(() => {
+      const h = document.documentElement.scrollHeight;
+      if (h !== lastH) {
+        lastH = h;
+        relayout();
+      }
+    }).observe(document.body);
+    relayout();
+  }
+</script>
