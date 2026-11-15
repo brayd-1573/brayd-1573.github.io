@@ -16,7 +16,7 @@ what to contribute, what the job market rewards.
   Do **not** re-fetch sources it already covers, and never print raw HTML or full API responses.
 - Hard caps for the whole run: **≤ 6** `--pr` lookups, **≤ 5** `--issue` lookups,
   **≤ 4** web searches, **≤ 4** page fetches. Fetch a page only to verify a claim you'll publish.
-- Don't explore the repo. You only touch the two files listed in step 7.
+- Don't explore the repo. You only touch the one file listed in step 7.
 
 **Cloud note:** repo-scoped GitHub REST calls are blocked in cloud sessions; `gather.py` already
 falls back to the search API and `releases.atom` feeds automatically. Don't work around it with
@@ -68,9 +68,9 @@ In `--issue` output, `open_prs_mentioning` with a recent PR means the issue is p
      `hint` and a worked `answer` showing the arithmetic. The answer is published next week.
    - `last_answer`: last week's `question` prompt + answer (from step 1), or `null`.
 7. Write `_data/digests/<DATE>.json`, where `DATE=$(TZ=America/Chicago date +%F)`. Then run
-   `python3 tools/digest/finalize.py _data/digests/<DATE>.json` and fix the file until it prints `OK`
-   (it also writes `_digests/<DATE>.md`). Commit only those two files:
-   `git add _data/digests/<DATE>.json _digests/<DATE>.md && git commit -m "rundown: issue <N>"`,
+   `python3 tools/digest/finalize.py _data/digests/<DATE>.json` and fix the file until it prints `OK`.
+   The site renders the page straight from this JSON. Commit only that one file:
+   `git add _data/digests/<DATE>.json && git commit -m "rundown: issue <N>"`,
    then `git push origin HEAD:main`. Pushing to `main` deploys the page, and a workflow
    opens the notification issue. If the push to main is refused, push to `claude/rundown-<DATE>`
    and say so in your final message.
