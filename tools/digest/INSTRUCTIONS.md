@@ -18,6 +18,12 @@ what to contribute, what the job market rewards.
   **≤ 4** web searches, **≤ 4** page fetches. Fetch a page only to verify a claim you'll publish.
 - Don't explore the repo. You only touch the two files listed in step 7.
 
+**Cloud note:** repo-scoped GitHub REST calls are blocked in cloud sessions; `gather.py` already
+falls back to the search API and `releases.atom` feeds automatically. Don't work around it with
+extra curl/search calls: what `--pr` / `--issue` return is enough. For a `read_the_diff` PR you
+may do **one** `git fetch --depth=1 https://github.com/vllm-project/vllm pull/<n>/head` to skim it.
+In `--issue` output, `open_prs_mentioning` with a recent PR means the issue is probably claimed.
+
 ## Steps
 
 1. `python3 tools/digest/finalize.py --last` gives you the next issue number, last week's

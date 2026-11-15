@@ -81,9 +81,28 @@ def fetch(url, accept=None, gh=False, timeout=30):
         raise
 
 
+NO_REST = os.environ.get("RUNDOWN_NO_REST") == "1"  # simulate cloud sessions, where repo-scoped REST is blocked
+
+
 def gh_json(path, **params):
+    if NO_REST and not path.startswith("/search/"):
+        raise urllib.error.HTTPError(path, 403, "simulated: repo REST blocked", None, None)
     q = ("?" + urllib.parse.urlencode(params)) if params else ""
     return json.loads(fetch(f"https://api.github.com{path}{q}", gh=True))
+
+
+def _search_one(n, kind):
+    """Find vLLM issue/PR #n via the search API (works in cloud sessions where REST is blocked)."""
+    for it in gh_search(f"repo:{VLLM} is:{kind} {n}", per_page=30):
+        if it["number"] == n:
+            return it
+    raise LookupError(f"#{n} not found via search")
+
+
+def _open_prs_mentioning(n):
+    items = gh_search(f"repo:{VLLM} is:pr is:open {n}", per_page=30)
+    return [{"n": i["number"], "title": i["title"][:120], "url": i["html_url"], "author": i["user"]["login"],
+             "created": i["created_at"][:10]} for i in items if i["number"] != n][:8]
 
 
 def gh_search(q, kind="issues", sort=None, pages=1, per_page=100):
@@ -154,6 +173,18 @@ def vllm_merged_prs(since):
 
 
 def vllm_pr_detail(n):
+    try:
+        return _vllm_pr_detail_rest(n)
+    except urllib.error.HTTPError:
+        it = _search_one(n, "pr")
+        return {"n": n, "title": it["title"], "url": it["html_url"], "author": it["user"]["login"],
+                "merged_at": (it.get("pull_request") or {}).get("merged_at"),
+                "labels": [l["name"] for l in it.get("labels", [])],
+                "body": clip(it.get("body"), 2500),
+                "note": "via search API (file list unavailable; for the diff: git fetch --depth=1 https://github.com/vllm-project/vllm pull/%d/head)" % n}
+
+
+def _vllm_pr_detail_rest(n):
     pr = gh_json(f"/repos/{VLLM}/pulls/{n}")
     files = gh_json(f"/repos/{VLLM}/pulls/{n}/files", per_page=100)
     return {
@@ -183,6 +214,20 @@ def vllm_good_first_issues():
 
 
 def vllm_issue_detail(n):
+    try:
+        return _vllm_issue_detail_rest(n)
+    except urllib.error.HTTPError:
+        it = _search_one(n, "issue")
+        time.sleep(2)
+        return {"n": n, "title": it["title"], "url": it["html_url"], "state": it["state"],
+                "assignees": [a["login"] for a in it.get("assignees", [])],
+                "comments": it.get("comments", 0), "updated": it["updated_at"][:10],
+                "body": clip(it.get("body"), 1500),
+                "open_prs_mentioning": _open_prs_mentioning(n),
+                "note": "via search API (comment text unavailable); treat open PRs mentioning the issue as likely claims"}
+
+
+def _vllm_issue_detail_rest(n):
     it = gh_json(f"/repos/{VLLM}/issues/{n}")
     comments = gh_json(f"/repos/{VLLM}/issues/{n}/comments", per_page=100)
     tl = safe(f"timeline {n}", lambda: gh_json(f"/repos/{VLLM}/issues/{n}/timeline", per_page=100), [])
@@ -204,6 +249,28 @@ def vllm_issue_detail(n):
 
 # ---------------------------------------------------------------- GitHub: user's public work
 def user_activity(since):
+    try:
+        return _user_activity_rest(since)
+    except urllib.error.HTTPError:
+        items = gh_search(f"author:{GH_USER} author-date:>={since:%Y-%m-%d} is:public", kind="commits")
+        repos = {}
+        for c in items:
+            r = c["repository"]
+            if r["full_name"] == SITE_REPO and c["commit"]["message"].lower().startswith("rundown"):
+                continue
+            e = repos.setdefault(r["full_name"], {"repo": r["full_name"], "url": r["html_url"],
+                                                  "description": (r.get("description") or "")[:150], "messages": []})
+            e["messages"].append(c["commit"]["message"].split("\n")[0][:120])
+        out = [{**e, "commits": len(e["messages"]), "messages": e["messages"][:15]} for e in repos.values()]
+        time.sleep(2)
+        prs = gh_search(f"author:{GH_USER} is:pr created:>={since:%Y-%m-%d}")
+        upstream = [{"title": p["title"][:140], "url": p["html_url"], "state": p["state"],
+                     "repo": p["repository_url"].split("/repos/")[-1]}
+                    for p in prs if not p["repository_url"].split("/repos/")[-1].startswith(f"{GH_USER}/")]
+        return {"repos": out, "prs_opened_elsewhere": upstream}
+
+
+def _user_activity_rest(since):
     repos = gh_json(f"/users/{GH_USER}/repos", sort="pushed", per_page=30, type="owner")
     out = []
     for r in repos:
@@ -234,14 +301,15 @@ def releases(since):
     out = []
     for repo in ["vllm-project/vllm", "sgl-project/sglang", "NVIDIA/TensorRT-LLM", "flashinfer-ai/flashinfer",
                  "triton-lang/triton", "pytorch/pytorch", "ggml-org/llama.cpp"]:
-        rels = safe(f"releases {repo}", lambda repo=repo: gh_json(f"/repos/{repo}/releases", per_page=5), [])
-        for r in rels:
-            d = parse_date(r.get("published_at"))
-            if d and d >= since and not r.get("draft"):
-                out.append({"repo": repo, "tag": r["tag_name"], "url": r["html_url"], "date": r["published_at"][:10],
-                            "notes": clip(r.get("body"), 700 if repo != "ggml-org/llama.cpp" else 150)})
-        if repo == "ggml-org/llama.cpp":  # releases nearly daily; keep only the latest
-            out = [o for o in out if o["repo"] != repo] + [o for o in out if o["repo"] == repo][:1]
+        rows = safe(f"releases {repo}", lambda repo=repo: feed(repo, f"https://github.com/{repo}/releases.atom", since,
+                                                               keyword_filter=False, limit=5), [])
+        rows = [r for r in rows if not r["title"].lower().startswith(("ciflow", "trunk/", "nightly"))]
+        for r in rows:
+            r["tag"] = r.pop("title")
+            r["repo"] = repo
+            r.pop("source", None)
+            r["notes"] = r.pop("summary")[: (150 if repo == "ggml-org/llama.cpp" else 600)]
+        out += rows[:1] if repo == "ggml-org/llama.cpp" else rows  # llama.cpp releases nearly daily
     return out
 
 
